@@ -8,14 +8,14 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-@Document(value = "process-templates", keyType = KeyType.uuid, allowUserKeys = true)
+@Document(value = "process_templates", keyType = KeyType.uuid, allowUserKeys = true)
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class ProcessTemplate extends BaseObject {
 
-    private String name;
+    private String name, instanceClass;
 
 }
 
