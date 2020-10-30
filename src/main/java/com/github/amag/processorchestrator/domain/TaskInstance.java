@@ -29,11 +29,19 @@ public class TaskInstance extends BaseObject {
     @LastModifiedDate
     private Date modifiedWhen;
 
+    private boolean isTemplate;
+
     @Ref
-    private ProcessTaskTemplate processTaskTemplate;
+    private TaskTemplate taskTemplate;
+
+    @Ref
+    private ProcessTemplate processTemplate;
 
     @Ref
     private List<TaskInstance> dependsOn;
+
+    @Ref
+    private ProcessInstance processInstance;
 
 }
 
