@@ -15,7 +15,7 @@ import lombok.NoArgsConstructor;
 @Builder
 public class TaskTemplate extends BaseObject {
 
-    private String name, description, instanceClass, instanceMethod;
+    private String name, description, instanceClass, instanceMethod, code;
 
 }
 

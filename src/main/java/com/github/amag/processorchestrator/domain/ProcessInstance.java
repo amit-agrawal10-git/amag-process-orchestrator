@@ -3,7 +3,10 @@ package com.github.amag.processorchestrator.domain;
 
 import com.arangodb.entity.KeyType;
 import com.arangodb.springframework.annotation.Document;
+import com.arangodb.springframework.annotation.HashIndex;
 import com.arangodb.springframework.annotation.Ref;
+import com.github.amag.processorchestrator.context.ProcessContext;
+import com.github.amag.processorchestrator.domain.enums.ProcessInstanceStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -18,9 +21,12 @@ import java.util.Date;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@HashIndex(fields = {"processDate","process"}, unique = true)
 public class ProcessInstance extends BaseObject {
 
-    private String name,status;
+    private String name;
+
+    private ProcessInstanceStatus status;
 
     @CreatedDate
     private Date createdWhen;
@@ -28,8 +34,12 @@ public class ProcessInstance extends BaseObject {
     @LastModifiedDate
     private Date modifiedWhen;
 
+    private Date processDate;
+
     @Ref
     private Process process;
+
+    private ProcessContext processContext;
 
 }
 

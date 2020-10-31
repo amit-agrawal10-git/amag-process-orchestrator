@@ -16,6 +16,17 @@
     <description>Process Orchestrator</description>
     <packaging>jar</packaging>
 
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <java.version>11</java.version>
+        <maven.compiler.source>${java.version}</maven.compiler.source>
+        <maven.compiler.target>${java.version}</maven.compiler.target>
+        <maven.compiler.plugin.version>3.8.1</maven.compiler.plugin.version>
+        <spring.ssm.version>2.2.0.RELEASE</spring.ssm.version>
+        <arango.db.version>1.0.3</arango.db.version>
+     </properties>
+
     <dependencies>
         <dependency>
             <groupId>com.arangodb</groupId>

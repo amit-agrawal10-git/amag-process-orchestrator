@@ -4,6 +4,7 @@ package com.github.amag.processorchestrator.domain;
 import com.arangodb.entity.KeyType;
 import com.arangodb.springframework.annotation.Document;
 import com.arangodb.springframework.annotation.Ref;
+import com.github.amag.processorchestrator.domain.enums.TaskInstanceStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -21,7 +22,7 @@ import java.util.List;
 @Builder
 public class TaskInstance extends BaseObject {
 
-    private String status;
+    private TaskInstanceStatus status;
 
     @CreatedDate
     private Date createdWhen;
@@ -42,6 +43,8 @@ public class TaskInstance extends BaseObject {
 
     @Ref
     private ProcessInstance processInstance;
+
+    private Object output;
 
 }
 

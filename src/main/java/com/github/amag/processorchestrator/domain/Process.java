@@ -3,6 +3,7 @@ package com.github.amag.processorchestrator.domain;
 
 import com.arangodb.entity.KeyType;
 import com.arangodb.springframework.annotation.*;
+import com.github.amag.processorchestrator.domain.enums.ProcessStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -15,12 +16,15 @@ import java.util.Date;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@HashIndex(fields = {"processTemplate"}, unique = true)
 public class Process extends BaseObject {
 
     private Date from, executedUpto;
 
     @Ref
     private ProcessTemplate processTemplate;
+
+    private ProcessStatus processStatus;
 
 }
 

@@ -18,10 +18,7 @@ import java.util.List;
 @Builder
 public class ProcessTemplate extends BaseObject {
 
-    private String name, instanceClass;
-
-    @Ref
-    private List<TaskInstance> templateTaskInstances;
+    private String name;
 
 }
 
