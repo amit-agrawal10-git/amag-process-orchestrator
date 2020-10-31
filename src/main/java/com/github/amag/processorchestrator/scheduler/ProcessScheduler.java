@@ -10,7 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 @Service
 @Slf4j
-public class ProcessJobScheduler {
+public class ProcessScheduler {
 
     private final ProcessManager processManager;
 

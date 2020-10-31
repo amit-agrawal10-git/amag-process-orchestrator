@@ -3,15 +3,15 @@ package com.github.amag.processorchestrator.repositories;
 import com.arangodb.springframework.annotation.Query;
 import com.arangodb.springframework.repository.ArangoRepository;
 import com.github.amag.processorchestrator.domain.TaskInstance;
+import com.github.amag.processorchestrator.domain.enums.ProcessInstanceStatus;
+import com.github.amag.processorchestrator.domain.enums.TaskInstanceStatus;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public interface TaskInstanceRepository extends ArangoRepository<TaskInstance, UUID> {
-
-    @Query("WITH process_templates FOR e IN task_instances FILTER e.processTemplate == @processTemplateArangoId AND e.isTemplate == true  RETURN e")
-    List<TaskInstance> findAllByProcessTemplateArangoIdAndIsTemplateTrue(@Param("processTemplateArangoId") String processTemplateArangoId);
 
     @Query("FOR e1 IN task_instances \n" +
             "     FILTER e1.isTemplate == true  \n" +
@@ -26,4 +26,17 @@ public interface TaskInstanceRepository extends ArangoRepository<TaskInstance, U
             "    RETURN e1")
     List<TaskInstance> findLastTaskInstancesByProcessTemplateArangoId(@Param("processTemplateArangoId") String processTemplateArangoId);
 
+    @Query("FOR t IN task_instances \n" +
+            "  FOR p IN process_instances\n" +
+            "     FILTER t.status == @currentTaskStatus \n" +
+            "     FILTER t.isTemplate == false \n" +
+            "     FILTER t.processInstance == p._id\n" +
+            "     FILTER p.status == @currentProcessStatus\n" +
+            "     FILTER t.dependsOn ALL IN (FOR X IN task_instances FILTER X.processInstance == t.processInstance \n" +
+            "     FILTER X.status == @taskDependsOnStatus \n" +
+            "     return X._id) OR t.dependsOn == NULL\n" +
+            "RETURN t")
+    Optional<TaskInstance> findTaskInstanceToStart(@Param("currentTaskStatus") TaskInstanceStatus currentTaskStatus,
+                                     @Param("currentProcessStatus") ProcessInstanceStatus currentProcessStatus,
+                                     @Param("taskDependsOnStatus") TaskInstanceStatus taskDependsOnStatus);
 }
