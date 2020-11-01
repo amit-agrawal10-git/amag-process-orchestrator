@@ -112,11 +112,8 @@ public class ProcessManager {
     }
 
     public void startProcess(){
-        ProcessInstance processInstance = ProcessInstance.builder()
-                .status(ProcessInstanceStatus.PENDING)
-                .build();
 
-        Optional<ProcessInstance> optionalProcessInstance = processInstanceRepository.findOne(Example.of(processInstance));
+        Optional<ProcessInstance> optionalProcessInstance = processInstanceRepository.findByStatus(ProcessInstanceStatus.PENDING);
         log.debug("Found process instance? {} ",optionalProcessInstance.isPresent());
 
         optionalProcessInstance.ifPresentOrElse(foundProcessInstance -> {
