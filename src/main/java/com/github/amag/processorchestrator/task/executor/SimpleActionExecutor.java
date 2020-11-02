@@ -28,7 +28,8 @@ public class SimpleActionExecutor {
             if(taskInstance.getDependsOn() != null && taskInstance.getDependsOn().size()>0 ){
                 taskInstance.getDependsOn().forEach(x->
                 {
-                    input.putAll(x.getOutput());
+                    if(x.getOutput()!=null)
+                        input.putAll(x.getOutput());
                 });
             }
             Map<String, Object> output = simpleAction.execute(taskInstance.getProcessInstance().getProcessContext(), input);

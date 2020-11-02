@@ -33,18 +33,11 @@ public class StartTaskAction implements Action<TaskInstanceStatus, TaskInstanceE
         Optional<TaskInstance> optionalTaskInstance = taskInstanceRepository.findById(taskInstanceId);
 
         optionalTaskInstance.ifPresentOrElse(taskInstance -> {
-                    try {
-                        Class clazz = Class.forName(taskInstance.getTaskTemplate().getInstanceClass());
-                        Object object = clazz.getDeclaredConstructor().newInstance();
-                        if (object instanceof SimpleAction) {
-                            simpleActionExecutor.execute((SimpleAction) object, taskInstanceId);
-                        }
-                    } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException | InstantiationException | InvocationTargetException exception) {
-                        log.error(exception.getMessage(),exception);
-                        stateContext.getStateMachine().
-                                getExtendedState().getVariables().put("ERROR", exception);
-                    }
-                }, () ->
+            Object object = taskInstance.getTaskTemplate().getBaseAction();
+            if (object instanceof SimpleAction) {
+                simpleActionExecutor.execute((SimpleAction) object, taskInstanceId);
+            }
+            }, () ->
                         log.error("Task Instance Not Found Id: " + taskInstanceId)
         );
     }

@@ -38,16 +38,10 @@ public class TaskManager {
 
         optionalTaskInstance.ifPresentOrElse(foundTaskInstance -> {
             sendTaskInstanceEvent(UUID.fromString(foundTaskInstance.getArangoKey()), TaskInstanceEvent.PICKEDUP, TaskInstanceStatus.READY);
-            try {
-                Class clazz = Class.forName(foundTaskInstance.getTaskTemplate().getInstanceClass());
-                Object object = clazz.getDeclaredConstructor().newInstance();
+                Object object = foundTaskInstance.getTaskTemplate().getBaseAction();
                 if (object instanceof SimpleAction) {
                     sendTaskInstanceEvent(UUID.fromString(foundTaskInstance.getArangoKey()), TaskInstanceEvent.FINISHED, TaskInstanceStatus.COMPLETED);
                 }
-            } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException | InstantiationException | InvocationTargetException exception) {
-                log.error(exception.getMessage(),exception);
-                sendTaskInstanceEvent(UUID.fromString(foundTaskInstance.getArangoKey()), TaskInstanceEvent.ERROR_OCCURRED, TaskInstanceStatus.FAILED);
-            }
         }, () ->
                 log.debug("Didn't find any pending task instance"));
     }
