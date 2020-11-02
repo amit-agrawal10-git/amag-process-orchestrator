@@ -20,4 +20,10 @@ public class ProcessTaskScheduler {
         taskManager.startTask();
     }
 
+    @Scheduled(fixedDelayString = "${amag.task.job.ready.delay}")
+    @Transactional
+    protected void findReadyTask() {
+        taskManager.findAndMarkReadyTask();
+    }
+
 }

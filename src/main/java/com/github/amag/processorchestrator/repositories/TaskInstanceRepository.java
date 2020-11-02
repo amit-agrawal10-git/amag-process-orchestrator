@@ -36,7 +36,10 @@ public interface TaskInstanceRepository extends ArangoRepository<TaskInstance, U
             "     FILTER X.status == @taskDependsOnStatus \n" +
             "     return X._id) OR t.dependsOn == NULL\n" +
             "RETURN t")
-    Optional<TaskInstance> findTaskInstanceToStart(@Param("currentTaskStatus") TaskInstanceStatus currentTaskStatus,
+    List<TaskInstance> findTaskInstanceToStart(@Param("currentTaskStatus") TaskInstanceStatus currentTaskStatus,
                                      @Param("currentProcessStatus") ProcessInstanceStatus currentProcessStatus,
                                      @Param("taskDependsOnStatus") TaskInstanceStatus taskDependsOnStatus);
+
+    Optional<TaskInstance> findByStatus(TaskInstanceStatus taskInstanceStatus);
+
 }

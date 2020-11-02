@@ -18,6 +18,7 @@ import org.springframework.statemachine.support.DefaultStateMachineContext;
 import org.springframework.stereotype.Service;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -32,18 +33,31 @@ public class TaskManager {
     private final StateMachineFactory<TaskInstanceStatus, TaskInstanceEvent> stateMachineFactory;
     private final TaskInstanceChangeInterceptor taskInstanceChangeInterceptor;
 
+    public void findAndMarkReadyTask(){
+        List<TaskInstance> taskInstances = taskInstanceRepository.findTaskInstanceToStart(TaskInstanceStatus.PENDING, ProcessInstanceStatus.INPROGRESS, TaskInstanceStatus.COMPLETED);
+        if(taskInstances !=null) {
+            log.debug("Found task instances? {} ",taskInstances.size());
+            for (final TaskInstance taskInstance:taskInstances) {
+                taskInstance.setStatus(TaskInstanceStatus.READY);
+                taskInstanceRepository.save(taskInstance);
+            }
+        } else {
+            log.debug("Didn't find any ready task");
+        }
+    }
+
     public void startTask(){
-        Optional<TaskInstance> optionalTaskInstance = taskInstanceRepository.findTaskInstanceToStart(TaskInstanceStatus.PENDING, ProcessInstanceStatus.INPROGRESS, TaskInstanceStatus.COMPLETED);
+        Optional<TaskInstance> optionalTaskInstance = taskInstanceRepository.findByStatus(TaskInstanceStatus.READY);
         log.debug("Found task instance? {} ",optionalTaskInstance.isPresent());
 
         optionalTaskInstance.ifPresentOrElse(foundTaskInstance -> {
-            sendTaskInstanceEvent(UUID.fromString(foundTaskInstance.getArangoKey()), TaskInstanceEvent.PICKEDUP, TaskInstanceStatus.READY);
+            sendTaskInstanceEvent(UUID.fromString(foundTaskInstance.getArangoKey()), TaskInstanceEvent.PICKEDUP, TaskInstanceStatus.STARTED);
                 Object object = foundTaskInstance.getTaskTemplate().getBaseAction();
                 if (object instanceof SimpleAction) {
                     sendTaskInstanceEvent(UUID.fromString(foundTaskInstance.getArangoKey()), TaskInstanceEvent.FINISHED, TaskInstanceStatus.COMPLETED);
                 }
         }, () ->
-                log.debug("Didn't find any pending task instance"));
+                log.debug("Didn't find any ready task instance"));
     }
 
     public void sendTaskInstanceEvent(UUID taskInstanceId, TaskInstanceEvent taskInstanceEvent, TaskInstanceStatus targetStatusEnum ){

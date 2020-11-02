@@ -39,17 +39,22 @@ public class TaskInstanceStateMachineConfig extends StateMachineConfigurerAdapte
         transitions.withExternal()
                     .source(TaskInstanceStatus.PENDING)
                     .target(TaskInstanceStatus.READY)
-                    .event(TaskInstanceEvent.PICKEDUP)
+                    .event(TaskInstanceEvent.DEPENDENCY_RESOLVED)
 
                 .and().withExternal()
                     .source(TaskInstanceStatus.READY)
+                    .target(TaskInstanceStatus.STARTED)
+                    .event(TaskInstanceEvent.PICKEDUP)
+
+                .and().withExternal()
+                    .source(TaskInstanceStatus.STARTED)
                     .target(TaskInstanceStatus.COMPLETED)
                     .event(TaskInstanceEvent.FINISHED)
                     .action(startTaskAction)
                     .guard(instanceIdGuard())
 
                 .and().withExternal()
-                    .source(TaskInstanceStatus.READY)
+                    .source(TaskInstanceStatus.STARTED)
                     .target(TaskInstanceStatus.WAITING)
                     .event(TaskInstanceEvent.EVENT_SENT)
 
@@ -65,6 +70,11 @@ public class TaskInstanceStateMachineConfig extends StateMachineConfigurerAdapte
 
                 .and().withExternal()
                     .source(TaskInstanceStatus.READY)
+                    .target(TaskInstanceStatus.FAILED)
+                    .event(TaskInstanceEvent.ERROR_OCCURRED)
+
+                .and().withExternal()
+                    .source(TaskInstanceStatus.STARTED)
                     .target(TaskInstanceStatus.FAILED)
                     .event(TaskInstanceEvent.ERROR_OCCURRED)
 
