@@ -1,6 +1,6 @@
 package com.github.amag.processorchestrator.interceptor;
 
-import com.github.amag.processorchestrator.config.TaskInstanceStateMachineConfig;
+import com.github.amag.processorchestrator.smconfig.TaskInstanceStateMachineConfig;
 import com.github.amag.processorchestrator.domain.TaskInstance;
 import com.github.amag.processorchestrator.domain.enums.TaskInstanceEvent;
 import com.github.amag.processorchestrator.domain.enums.TaskInstanceStatus;
@@ -38,4 +38,13 @@ public class TaskInstanceChangeInterceptor extends StateMachineInterceptorAdapte
                 }
                 );
     }
+
+    public Exception stateMachineError(StateMachine<TaskInstanceStatus, TaskInstanceEvent> stateMachine, Exception exception) {
+        stateMachine.getExtendedState().getVariables().put("ERROR", exception);
+        log.error("StateMachineError", exception);
+        return exception;
+    }
+
+
+
 }

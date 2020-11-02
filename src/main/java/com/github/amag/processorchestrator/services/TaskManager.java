@@ -1,12 +1,13 @@
 package com.github.amag.processorchestrator.services;
 
-import com.github.amag.processorchestrator.config.TaskInstanceStateMachineConfig;
+import com.github.amag.processorchestrator.smconfig.TaskInstanceStateMachineConfig;
 import com.github.amag.processorchestrator.domain.TaskInstance;
 import com.github.amag.processorchestrator.domain.enums.ProcessInstanceStatus;
 import com.github.amag.processorchestrator.domain.enums.TaskInstanceEvent;
 import com.github.amag.processorchestrator.domain.enums.TaskInstanceStatus;
 import com.github.amag.processorchestrator.interceptor.TaskInstanceChangeInterceptor;
 import com.github.amag.processorchestrator.repositories.TaskInstanceRepository;
+import com.github.amag.processorchestrator.task.types.SimpleAction;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.Message;
@@ -16,6 +17,7 @@ import org.springframework.statemachine.config.StateMachineFactory;
 import org.springframework.statemachine.support.DefaultStateMachineContext;
 import org.springframework.stereotype.Service;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -35,19 +37,37 @@ public class TaskManager {
         log.debug("Found task instance? {} ",optionalTaskInstance.isPresent());
 
         optionalTaskInstance.ifPresentOrElse(foundTaskInstance -> {
-            sendTaskInstanceEvent(foundTaskInstance, TaskInstanceEvent.PICKEDUP, TaskInstanceStatus.STARTED);
+            sendTaskInstanceEvent(UUID.fromString(foundTaskInstance.getArangoKey()), TaskInstanceEvent.PICKEDUP, TaskInstanceStatus.READY);
+            try {
+                Class clazz = Class.forName(foundTaskInstance.getTaskTemplate().getInstanceClass());
+                Object object = clazz.getDeclaredConstructor().newInstance();
+                if (object instanceof SimpleAction) {
+                    sendTaskInstanceEvent(UUID.fromString(foundTaskInstance.getArangoKey()), TaskInstanceEvent.FINISHED, TaskInstanceStatus.COMPLETED);
+                }
+            } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException | InstantiationException | InvocationTargetException exception) {
+                log.error(exception.getMessage(),exception);
+                sendTaskInstanceEvent(UUID.fromString(foundTaskInstance.getArangoKey()), TaskInstanceEvent.ERROR_OCCURRED, TaskInstanceStatus.FAILED);
+            }
         }, () ->
                 log.debug("Didn't find any pending task instance"));
     }
 
-    private void sendTaskInstanceEvent(final TaskInstance taskInstance, TaskInstanceEvent taskInstanceEvent, TaskInstanceStatus targetStatusEnum ){
-        StateMachine<TaskInstanceStatus, TaskInstanceEvent> stateMachine = build(taskInstance);
-        Message message
-                = MessageBuilder.withPayload(taskInstanceEvent)
-                .setHeader(TaskInstanceStateMachineConfig.TASK_INSTANCE_ID_HEADER,taskInstance.getArangoKey())
-                .build();
-        stateMachine.sendEvent(message);
-        awaitForStatus(UUID.fromString(taskInstance.getArangoKey()), targetStatusEnum);
+    public void sendTaskInstanceEvent(UUID taskInstanceId, TaskInstanceEvent taskInstanceEvent, TaskInstanceStatus targetStatusEnum ){
+        Optional<TaskInstance> optionalTaskInstance = taskInstanceRepository.findById(taskInstanceId);
+        optionalTaskInstance.ifPresentOrElse(taskInstance -> {
+            StateMachine<TaskInstanceStatus, TaskInstanceEvent> stateMachine = build(taskInstance);
+            Message message
+                    = MessageBuilder.withPayload(taskInstanceEvent)
+                    .setHeader(TaskInstanceStateMachineConfig.TASK_INSTANCE_ID_HEADER,taskInstance.getArangoKey())
+                    .build();
+            stateMachine.sendEvent(message);
+            awaitForStatus(UUID.fromString(taskInstance.getArangoKey()), targetStatusEnum);
+            if(stateMachine.hasStateMachineError()){
+                sendTaskInstanceEvent(UUID.fromString(taskInstance.getArangoKey()), TaskInstanceEvent.ERROR_OCCURRED, TaskInstanceStatus.FAILED);
+            }
+        },() -> {
+            log.error("Error while sending event");
+        });
     }
 
     private void awaitForStatus(UUID taskInstanceId, TaskInstanceStatus statusEnum) {

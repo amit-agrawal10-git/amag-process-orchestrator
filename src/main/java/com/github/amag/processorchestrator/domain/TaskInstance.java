@@ -14,6 +14,7 @@ import org.springframework.data.annotation.LastModifiedDate;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 @Document(value = "task_instances", keyType = KeyType.uuid, allowUserKeys = true)
 @Data
@@ -44,7 +45,7 @@ public class TaskInstance extends BaseObject {
     @Ref
     private ProcessInstance processInstance;
 
-    private Object output;
+    private Map<String, Object> output;
 
 }
 

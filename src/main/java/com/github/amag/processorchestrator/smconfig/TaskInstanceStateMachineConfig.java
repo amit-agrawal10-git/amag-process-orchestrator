@@ -1,10 +1,11 @@
-package com.github.amag.processorchestrator.config;
+package com.github.amag.processorchestrator.smconfig;
 
 import com.github.amag.processorchestrator.domain.enums.TaskInstanceEvent;
 import com.github.amag.processorchestrator.domain.enums.TaskInstanceStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.statemachine.action.Action;
 import org.springframework.statemachine.config.EnableStateMachineFactory;
 import org.springframework.statemachine.config.StateMachineConfigurerAdapter;
 import org.springframework.statemachine.config.builders.StateMachineStateConfigurer;
@@ -20,6 +21,8 @@ import java.util.EnumSet;
 public class TaskInstanceStateMachineConfig extends StateMachineConfigurerAdapter<TaskInstanceStatus, TaskInstanceEvent> {
 
     public static final String TASK_INSTANCE_ID_HEADER = "taskInstanceId";
+    private final Action<TaskInstanceStatus, TaskInstanceEvent> startTaskAction;
+
 
     @Override
     public void configure(StateMachineStateConfigurer<TaskInstanceStatus, TaskInstanceEvent> states) throws Exception {
@@ -35,16 +38,18 @@ public class TaskInstanceStateMachineConfig extends StateMachineConfigurerAdapte
     public void configure(StateMachineTransitionConfigurer<TaskInstanceStatus, TaskInstanceEvent> transitions) throws Exception {
         transitions.withExternal()
                     .source(TaskInstanceStatus.PENDING)
-                    .target(TaskInstanceStatus.STARTED)
+                    .target(TaskInstanceStatus.READY)
                     .event(TaskInstanceEvent.PICKEDUP)
 
                 .and().withExternal()
-                    .source(TaskInstanceStatus.STARTED)
+                    .source(TaskInstanceStatus.READY)
                     .target(TaskInstanceStatus.COMPLETED)
                     .event(TaskInstanceEvent.FINISHED)
+                    .action(startTaskAction)
+                    .guard(instanceIdGuard())
 
                 .and().withExternal()
-                    .source(TaskInstanceStatus.STARTED)
+                    .source(TaskInstanceStatus.READY)
                     .target(TaskInstanceStatus.WAITING)
                     .event(TaskInstanceEvent.EVENT_SENT)
 
@@ -59,7 +64,7 @@ public class TaskInstanceStateMachineConfig extends StateMachineConfigurerAdapte
                     .event(TaskInstanceEvent.FINISHED)
 
                 .and().withExternal()
-                    .source(TaskInstanceStatus.STARTED)
+                    .source(TaskInstanceStatus.READY)
                     .target(TaskInstanceStatus.FAILED)
                     .event(TaskInstanceEvent.ERROR_OCCURRED)
 
@@ -71,8 +76,7 @@ public class TaskInstanceStateMachineConfig extends StateMachineConfigurerAdapte
                 .and().withExternal()
                     .source(TaskInstanceStatus.CALLEDBACK)
                     .target(TaskInstanceStatus.FAILED)
-                    .event(TaskInstanceEvent.ERROR_OCCURRED)
-            ;
+                    .event(TaskInstanceEvent.ERROR_OCCURRED);
 
     }
 
