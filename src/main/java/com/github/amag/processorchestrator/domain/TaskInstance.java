@@ -46,5 +46,9 @@ public class TaskInstance extends BaseObject {
     private ProcessInstance processInstance;
 
     // todo improve data storage of tast instanc, avoid duplicate data
+    @Ref(lazy = true)
+    private TaskInstance taskTemplate;
+
+    private Object output;
 }
 

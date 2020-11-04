@@ -81,11 +81,15 @@ public class ProcessManager {
         if (taskInstances != null) {
             taskInstances.stream().forEach(x ->
             {
+                x.setTaskTemplate(taskInstanceRepository.findById(UUID.fromString(x.getArangoKey())).get());
                 x.setArangoId(null);
                 x.setArangoKey(null);
                 x.setTemplate(false);
                 x.setCreatedWhen(null);
                 x.setModifiedWhen(null);
+                x.setBaseAction(null);
+                x.setDescription(null);
+                x.setProcessTemplate(null);
                 x.setProcessInstance(processInstance);
                 if (resultTaskInstances.contains(x)) {
                     TaskInstance y = resultTaskInstances.get(resultTaskInstances.indexOf(x));

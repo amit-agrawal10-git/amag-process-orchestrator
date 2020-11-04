@@ -2,7 +2,6 @@ package com.github.amag.processorchestrator.task.executor;
 
 import com.arangodb.springframework.core.ArangoOperations;
 import com.github.amag.processorchestrator.domain.TaskInstance;
-import com.github.amag.processorchestrator.repositories.TaskInstanceRepository;
 import com.github.amag.processorchestrator.task.types.SimpleAction;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,7 +22,7 @@ public class SimpleActionExecutor {
 
         optionalTaskInstance.ifPresentOrElse(taskInstance -> {
           Object output =  simpleAction.execute(UUID.fromString(taskInstance.getArangoKey()),arangoOperations);
-          taskInstance.getBaseAction().setOutput(output);
+          taskInstance.setOutput(output);
           arangoOperations.repsert(taskInstance);
         }, () -> {
             log.debug("Expected task instance not found");

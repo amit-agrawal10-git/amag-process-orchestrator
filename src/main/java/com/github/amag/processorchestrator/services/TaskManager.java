@@ -52,7 +52,7 @@ public class TaskManager {
         optionalTaskInstance.ifPresentOrElse(foundTaskInstance -> {
             foundTaskInstance.setStatus(TaskInstanceStatus.STARTED);
             final TaskInstance savedTaskInstance = taskInstanceRepository.save(foundTaskInstance);
-                Object object = savedTaskInstance.getBaseAction();
+                Object object = savedTaskInstance.getTaskTemplate().getBaseAction();
                 if (object instanceof SimpleAction) {
                     sendTaskInstanceEvent(UUID.fromString(savedTaskInstance.getArangoKey()), TaskInstanceEvent.FINISHED, TaskInstanceStatus.COMPLETED);
                 }
