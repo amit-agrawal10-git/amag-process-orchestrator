@@ -1,7 +1,5 @@
 package com.github.amag.processorchestrator.context;
 
-import com.github.amag.processorchestrator.domain.ProcessInstance;
-
 import java.util.HashMap;
 import java.util.Map;
 

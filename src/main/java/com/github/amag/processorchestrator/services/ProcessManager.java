@@ -53,7 +53,6 @@ public class ProcessManager {
                         ProcessInstance processInstance = ProcessInstance.builder()
                                 .process(process)
                                 .status(ProcessInstanceStatus.PENDING)
-                                .name("TEST")
                                 .processDate(date)
                                 .build();
 

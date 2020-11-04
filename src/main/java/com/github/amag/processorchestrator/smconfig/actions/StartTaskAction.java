@@ -33,7 +33,7 @@ public class StartTaskAction implements Action<TaskInstanceStatus, TaskInstanceE
         Optional<TaskInstance> optionalTaskInstance = taskInstanceRepository.findById(taskInstanceId);
 
         optionalTaskInstance.ifPresentOrElse(taskInstance -> {
-            Object object = taskInstance.getTaskTemplate().getBaseAction();
+            Object object = taskInstance.getBaseAction();
             if (object instanceof SimpleAction) {
                 simpleActionExecutor.execute((SimpleAction) object, taskInstanceId);
             }

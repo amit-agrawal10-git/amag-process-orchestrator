@@ -24,8 +24,6 @@ import java.util.Date;
 @HashIndex(fields = {"processDate","process"}, unique = true)
 public class ProcessInstance extends BaseObject {
 
-    private String name;
-
     private ProcessInstanceStatus status;
 
     @CreatedDate
@@ -36,7 +34,7 @@ public class ProcessInstance extends BaseObject {
 
     private Date processDate;
 
-    @Ref
+    @Ref(lazy = true)
     private Process process;
 
     private ProcessContext processContext;

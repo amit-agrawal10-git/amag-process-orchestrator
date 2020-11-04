@@ -1,12 +1,12 @@
 package com.github.amag.processorchestrator.services;
 
-import com.github.amag.processorchestrator.smconfig.TaskInstanceStateMachineConfig;
 import com.github.amag.processorchestrator.domain.TaskInstance;
 import com.github.amag.processorchestrator.domain.enums.ProcessInstanceStatus;
 import com.github.amag.processorchestrator.domain.enums.TaskInstanceEvent;
 import com.github.amag.processorchestrator.domain.enums.TaskInstanceStatus;
 import com.github.amag.processorchestrator.interceptor.TaskInstanceChangeInterceptor;
 import com.github.amag.processorchestrator.repositories.TaskInstanceRepository;
+import com.github.amag.processorchestrator.smconfig.TaskInstanceStateMachineConfig;
 import com.github.amag.processorchestrator.task.types.SimpleAction;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,7 +17,6 @@ import org.springframework.statemachine.config.StateMachineFactory;
 import org.springframework.statemachine.support.DefaultStateMachineContext;
 import org.springframework.stereotype.Service;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -51,10 +50,11 @@ public class TaskManager {
         log.debug("Found task instance? {} ",optionalTaskInstance.isPresent());
 
         optionalTaskInstance.ifPresentOrElse(foundTaskInstance -> {
-            sendTaskInstanceEvent(UUID.fromString(foundTaskInstance.getArangoKey()), TaskInstanceEvent.PICKEDUP, TaskInstanceStatus.STARTED);
-                Object object = foundTaskInstance.getTaskTemplate().getBaseAction();
+            foundTaskInstance.setStatus(TaskInstanceStatus.STARTED);
+            final TaskInstance savedTaskInstance = taskInstanceRepository.save(foundTaskInstance);
+                Object object = savedTaskInstance.getBaseAction();
                 if (object instanceof SimpleAction) {
-                    sendTaskInstanceEvent(UUID.fromString(foundTaskInstance.getArangoKey()), TaskInstanceEvent.FINISHED, TaskInstanceStatus.COMPLETED);
+                    sendTaskInstanceEvent(UUID.fromString(savedTaskInstance.getArangoKey()), TaskInstanceEvent.FINISHED, TaskInstanceStatus.COMPLETED);
                 }
         }, () ->
                 log.debug("Didn't find any ready task instance"));

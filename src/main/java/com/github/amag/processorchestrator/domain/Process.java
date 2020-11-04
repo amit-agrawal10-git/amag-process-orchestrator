@@ -21,7 +21,7 @@ public class Process extends BaseObject {
 
     private Date from, executedUpto;
 
-    @Ref
+    @Ref(lazy = true)
     private ProcessTemplate processTemplate;
 
     private ProcessStatus processStatus;

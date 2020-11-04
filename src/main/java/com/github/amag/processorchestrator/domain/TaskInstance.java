@@ -5,6 +5,7 @@ import com.arangodb.entity.KeyType;
 import com.arangodb.springframework.annotation.Document;
 import com.arangodb.springframework.annotation.Ref;
 import com.github.amag.processorchestrator.domain.enums.TaskInstanceStatus;
+import com.github.amag.processorchestrator.task.types.BaseAction;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -14,7 +15,6 @@ import org.springframework.data.annotation.LastModifiedDate;
 
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 
 @Document(value = "task_instances", keyType = KeyType.uuid, allowUserKeys = true)
 @Data
@@ -22,6 +22,9 @@ import java.util.Map;
 @AllArgsConstructor
 @Builder
 public class TaskInstance extends BaseObject {
+
+    private String name, description;
+    private BaseAction baseAction;
 
     private TaskInstanceStatus status;
 
@@ -33,19 +36,15 @@ public class TaskInstance extends BaseObject {
 
     private boolean isTemplate;
 
-    @Ref
-    private TaskTemplate taskTemplate;
-
-    @Ref
+    @Ref(lazy = true)
     private ProcessTemplate processTemplate;
 
-    @Ref
+    @Ref(lazy = false) // todo to change
     private List<TaskInstance> dependsOn;
 
-    @Ref
+    @Ref(lazy = true)
     private ProcessInstance processInstance;
 
-    private Map<String, Object> output;
-
+    // todo improve data storage of tast instanc, avoid duplicate data
 }
 

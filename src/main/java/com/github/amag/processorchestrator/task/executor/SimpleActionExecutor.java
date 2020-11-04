@@ -1,5 +1,6 @@
 package com.github.amag.processorchestrator.task.executor;
 
+import com.arangodb.springframework.core.ArangoOperations;
 import com.github.amag.processorchestrator.domain.TaskInstance;
 import com.github.amag.processorchestrator.repositories.TaskInstanceRepository;
 import com.github.amag.processorchestrator.task.types.SimpleAction;
@@ -7,8 +8,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -17,26 +16,15 @@ import java.util.UUID;
 @Component
 public class SimpleActionExecutor {
 
-    private final TaskInstanceRepository taskInstanceRepository;
+    private final ArangoOperations arangoOperations;
 
-    public void execute(SimpleAction simpleAction, UUID taskInstanceId){
-        Optional<TaskInstance> optionalTaskInstance = taskInstanceRepository.findById(taskInstanceId);
+    public void execute(SimpleAction simpleAction, UUID taskInstanceId) {
+        Optional<TaskInstance> optionalTaskInstance = arangoOperations.find(taskInstanceId, TaskInstance.class);
 
         optionalTaskInstance.ifPresentOrElse(taskInstance -> {
-            Map<String, Object> input = new HashMap<>();
-
-            if(taskInstance.getDependsOn() != null && taskInstance.getDependsOn().size()>0 ){
-                taskInstance.getDependsOn().forEach(x->
-                {
-                    if(x.getOutput()!=null)
-                        input.putAll(x.getOutput());
-                });
-            }
-            Map<String, Object> output = simpleAction.execute(taskInstance.getProcessInstance().getProcessContext(), input);
-                if (output != null) {
-                    taskInstance.setOutput(output);
-                }
-           taskInstanceRepository.save(taskInstance);
+          Object output =  simpleAction.execute(UUID.fromString(taskInstance.getArangoKey()),arangoOperations);
+          taskInstance.getBaseAction().setOutput(output);
+          arangoOperations.repsert(taskInstance);
         }, () -> {
             log.debug("Expected task instance not found");
         });
