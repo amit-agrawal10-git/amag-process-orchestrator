@@ -14,6 +14,7 @@ import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
 
 import java.util.Date;
+import java.util.UUID;
 
 @Document(value = "process_error_log", keyType = KeyType.uuid, allowUserKeys = true)
 @Data
@@ -27,9 +28,9 @@ public class ErrorLog extends BaseObject {
 
     private ErrorLogTypes entityType;
 
-    private String entityId;
+    private UUID entityId;
 
-    private Exception exception;
+    private String stackTrace;
 }
 
 

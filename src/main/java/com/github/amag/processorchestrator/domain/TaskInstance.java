@@ -39,7 +39,7 @@ public class TaskInstance extends BaseObject {
     @Ref(lazy = true)
     private ProcessInstance processTemplate;
 
-    @Ref(lazy = false) // todo to change
+    @Ref(lazy = false)
     private List<TaskInstance> dependsOn;
 
     @Ref(lazy = true)

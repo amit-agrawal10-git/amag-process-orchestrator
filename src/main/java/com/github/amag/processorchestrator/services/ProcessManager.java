@@ -64,6 +64,7 @@ public class ProcessManager {
 
 
                         List<TaskInstance> taskInstances = taskInstanceRepository.findLastTaskInstancesByProcessTemplateArangoId(process.getProcessTemplate().getArangoId());
+                      //  loadAllTaskInstanceTemplate(taskInstances);
                         List<TaskInstance> newTaskInstances = new ArrayList<TaskInstance>();
                         List<TaskInstance2TaskInstance> tempInstances = new ArrayList<>();
                         copy(processInstance, null, taskInstances, newTaskInstances, tempInstances);
@@ -82,6 +83,15 @@ public class ProcessManager {
         , () -> {
                     log.debug("Didn't find any pending process");
                 });
+    }
+
+    private void loadAllTaskInstanceTemplate(List<TaskInstance> taskInstances){
+        if (taskInstances != null) {
+            taskInstances.stream().forEach(x ->
+            {
+                loadAllTaskInstanceTemplate(x.getDependsOn());
+            });
+        }
     }
 
     private void copy(ProcessInstance processInstance,TaskInstance dependentInstance, List<TaskInstance> taskInstances, List<TaskInstance> resultTaskInstances, List<TaskInstance2TaskInstance> instance2TaskInstances) {
