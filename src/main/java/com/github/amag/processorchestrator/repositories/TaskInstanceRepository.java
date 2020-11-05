@@ -30,6 +30,7 @@ public interface TaskInstanceRepository extends ArangoRepository<TaskInstance, U
             "  FOR p IN process_instances\n" +
             "     FILTER t.status == @currentTaskStatus \n" +
             "     FILTER t.isTemplate == false \n" +
+            "     FILTER p.isTemplate == false \n" +
             "     FILTER t.processInstance == p._id\n" +
             "     FILTER p.status == @currentProcessStatus\n" +
             "     FILTER t.dependsOn ALL IN (FOR X IN task_instances FILTER X.processInstance == t.processInstance \n" +

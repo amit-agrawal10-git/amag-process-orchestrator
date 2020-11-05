@@ -26,4 +26,10 @@ public class ProcessScheduler {
         processManager.startProcess();
     }
 
+    @Scheduled(fixedDelayString = "${amag.process.job.finish.delay}")
+    @Transactional
+    protected void finishJob() {
+        processManager.completeProcess();
+    }
+
 }

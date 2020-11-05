@@ -23,7 +23,6 @@ public class TaskInstanceStateMachineConfig extends StateMachineConfigurerAdapte
     public static final String TASK_INSTANCE_ID_HEADER = "taskInstanceId";
     private final Action<TaskInstanceStatus, TaskInstanceEvent> startTaskAction;
 
-
     @Override
     public void configure(StateMachineStateConfigurer<TaskInstanceStatus, TaskInstanceEvent> states) throws Exception {
         states.withStates()

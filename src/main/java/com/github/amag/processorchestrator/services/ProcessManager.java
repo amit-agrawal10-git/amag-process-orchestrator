@@ -6,6 +6,7 @@ import com.github.amag.processorchestrator.domain.ProcessInstance;
 import com.github.amag.processorchestrator.domain.TaskInstance;
 import com.github.amag.processorchestrator.domain.enums.ProcessInstanceStatus;
 import com.github.amag.processorchestrator.domain.enums.ProcessStatus;
+import com.github.amag.processorchestrator.domain.enums.TaskInstanceStatus;
 import com.github.amag.processorchestrator.repositories.ProcessInstanceRepository;
 import com.github.amag.processorchestrator.repositories.ProcessRepository;
 import com.github.amag.processorchestrator.repositories.TaskInstanceRepository;
@@ -50,11 +51,17 @@ public class ProcessManager {
 
                     for (Date date = start.getTime(); start.before(end); start.add(Calendar.DATE, 1),
                             date = start.getTime()) {
-                        ProcessInstance processInstance = ProcessInstance.builder()
-                                .process(process)
-                                .status(ProcessInstanceStatus.PENDING)
+
+
+
+                        ProcessInstance processInstance = process.getProcessTemplate()
+                                .toBuilder()
                                 .processDate(date)
-                                .build();
+                                .processTemplate(process.getProcessTemplate())
+                                .isTemplate(false)
+                                .build()
+                                ;
+
 
                         List<TaskInstance> taskInstances = taskInstanceRepository.findLastTaskInstancesByProcessTemplateArangoId(process.getProcessTemplate().getArangoId());
                         List<TaskInstance> newTaskInstances = new ArrayList<TaskInstance>();
@@ -116,7 +123,7 @@ public class ProcessManager {
 
     public void startProcess(){
 
-        Optional<ProcessInstance> optionalProcessInstance = processInstanceRepository.findByStatus(ProcessInstanceStatus.PENDING);
+        Optional<ProcessInstance> optionalProcessInstance = processInstanceRepository.findByStatusAndIsTemplate(ProcessInstanceStatus.PENDING, false);
         log.debug("Found process instance? {} ",optionalProcessInstance.isPresent());
 
         optionalProcessInstance.ifPresentOrElse(foundProcessInstance -> {
@@ -128,6 +135,20 @@ public class ProcessManager {
             processInstanceRepository.save(foundProcessInstance);
         }, () ->
                 log.debug("Didn't find any pending process instance"));
+    }
+
+    public void completeProcess(){
+
+        List<ProcessInstance> processInstances = processInstanceRepository.findCompletedProcessInstances(TaskInstanceStatus.COMPLETED, ProcessInstanceStatus.COMPLETED);
+        if (processInstances != null && processInstances.size()>0){
+            log.debug("Found {} completed process instance",processInstances.size());
+            processInstances.forEach(processInstance -> {
+                processInstance.setStatus(ProcessInstanceStatus.COMPLETED);
+                processInstanceRepository.save(processInstance);
+            });
+        } else {
+            log.debug("Didn't find any completed process instances");
+        }
     }
 
     private class TaskInstance2TaskInstance

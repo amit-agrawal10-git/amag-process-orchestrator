@@ -20,9 +20,11 @@ import java.util.Date;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
-@HashIndex(fields = {"processDate","process"}, unique = true)
+@Builder(toBuilder = true)
+@HashIndex(fields = {"processDate","processTemplate"}, unique = true)
 public class ProcessInstance extends BaseObject {
+
+    private String name;
 
     private ProcessInstanceStatus status;
 
@@ -35,9 +37,11 @@ public class ProcessInstance extends BaseObject {
     private Date processDate;
 
     @Ref(lazy = true)
-    private Process process;
+    private ProcessInstance processTemplate;
 
     private ProcessContext processContext;
+
+    private boolean isTemplate;
 
 }
 

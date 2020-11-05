@@ -37,7 +37,7 @@ public class TaskInstance extends BaseObject {
     private boolean isTemplate;
 
     @Ref(lazy = true)
-    private ProcessTemplate processTemplate;
+    private ProcessInstance processTemplate;
 
     @Ref(lazy = false) // todo to change
     private List<TaskInstance> dependsOn;
@@ -45,7 +45,6 @@ public class TaskInstance extends BaseObject {
     @Ref(lazy = true)
     private ProcessInstance processInstance;
 
-    // todo improve data storage of tast instanc, avoid duplicate data
     @Ref(lazy = true)
     private TaskInstance taskTemplate;
 

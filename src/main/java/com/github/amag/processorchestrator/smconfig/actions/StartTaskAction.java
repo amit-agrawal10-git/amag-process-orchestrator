@@ -35,7 +35,12 @@ public class StartTaskAction implements Action<TaskInstanceStatus, TaskInstanceE
         optionalTaskInstance.ifPresentOrElse(taskInstance -> {
             Object object = taskInstance.getTaskTemplate().getBaseAction();
             if (object instanceof SimpleAction) {
-                simpleActionExecutor.execute((SimpleAction) object, taskInstanceId);
+                try {
+                    simpleActionExecutor.execute((SimpleAction) object, taskInstanceId);
+                } catch (Exception ex){
+                    stateContext.getStateMachine().setStateMachineError(ex);
+                    throw ex;
+                }
             }
             }, () ->
                         log.error("Task Instance Not Found Id: " + taskInstanceId)
