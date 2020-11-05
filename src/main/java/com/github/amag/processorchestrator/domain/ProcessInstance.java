@@ -6,6 +6,7 @@ import com.arangodb.springframework.annotation.Document;
 import com.arangodb.springframework.annotation.HashIndex;
 import com.arangodb.springframework.annotation.Ref;
 import com.github.amag.processorchestrator.context.ProcessContext;
+import com.github.amag.processorchestrator.criteria.Criteria;
 import com.github.amag.processorchestrator.domain.enums.ProcessInstanceStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -42,6 +43,8 @@ public class ProcessInstance extends BaseObject {
     private ProcessContext processContext;
 
     private boolean isTemplate;
+
+    private Criteria<ProcessInstance> executionCriteria;
 
 }
 

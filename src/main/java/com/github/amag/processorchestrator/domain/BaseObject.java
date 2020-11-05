@@ -12,4 +12,7 @@ public abstract class BaseObject {
 
     @ArangoId
     protected String arangoId;
+
+    protected transient boolean criteriaResult;
+
 }

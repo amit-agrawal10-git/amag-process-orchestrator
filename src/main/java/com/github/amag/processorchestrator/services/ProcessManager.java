@@ -1,6 +1,7 @@
 package com.github.amag.processorchestrator.services;
 
 import com.github.amag.processorchestrator.context.ProcessContext;
+import com.github.amag.processorchestrator.criteria.Criteria;
 import com.github.amag.processorchestrator.domain.Process;
 import com.github.amag.processorchestrator.domain.ProcessInstance;
 import com.github.amag.processorchestrator.domain.TaskInstance;
@@ -61,7 +62,12 @@ public class ProcessManager {
                                 .isTemplate(false)
                                 .build()
                                 ;
-
+                        Criteria<ProcessInstance> processInstanceCriteria = null;
+                        if((processInstanceCriteria = processInstance.getExecutionCriteria()) != null){
+                            if (!processInstanceCriteria.evaluate(processInstance).isCriteriaResult()){
+                                continue;
+                            }
+                        }
 
                         List<TaskInstance> taskInstances = taskInstanceRepository.findLastTaskInstancesByProcessTemplateArangoId(process.getProcessTemplate().getArangoId());
                       //  loadAllTaskInstanceTemplate(taskInstances);
