@@ -29,7 +29,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class TaskManager {
 
     private final TaskInstanceRepository taskInstanceRepository;
-    private final StateMachineFactory<TaskInstanceStatus, TaskInstanceEvent> stateMachineFactory;
+    private final StateMachineFactory<TaskInstanceStatus, TaskInstanceEvent> taskInstanceStateMachineFactory;
     private final TaskInstanceChangeInterceptor taskInstanceChangeInterceptor;
 
     public void findAndMarkReadyTask(){
@@ -114,7 +114,7 @@ public class TaskManager {
 
 
     private StateMachine<TaskInstanceStatus, TaskInstanceEvent> build(TaskInstance taskInstance){
-        StateMachine<TaskInstanceStatus, TaskInstanceEvent> stateMachine = stateMachineFactory.getStateMachine(UUID.fromString(taskInstance.getArangoKey()));
+        StateMachine<TaskInstanceStatus, TaskInstanceEvent> stateMachine = taskInstanceStateMachineFactory.getStateMachine(UUID.fromString(taskInstance.getArangoKey()));
         stateMachine.stop();
 
         stateMachine.getStateMachineAccessor()

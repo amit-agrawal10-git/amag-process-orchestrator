@@ -15,7 +15,7 @@ import org.springframework.statemachine.guard.Guard;
 import java.util.EnumSet;
 
 @Configuration
-@EnableStateMachineFactory
+@EnableStateMachineFactory(name = "taskInstanceStateMachineFactory")
 @Slf4j
 @RequiredArgsConstructor
 public class TaskInstanceStateMachineConfig extends StateMachineConfigurerAdapter<TaskInstanceStatus, TaskInstanceEvent> {

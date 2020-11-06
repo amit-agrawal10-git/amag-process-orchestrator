@@ -17,6 +17,7 @@ import java.util.UUID;
 public interface ProcessInstanceRepository extends ArangoRepository<ProcessInstance, UUID> {
 
     Optional<ProcessInstance> findByStatusAndIsTemplate(ProcessInstanceStatus processInstanceStatus,boolean IsTemplate);
+    List<ProcessInstance> findAllByStatusAndIsTemplate(ProcessInstanceStatus processInstanceStatus,boolean IsTemplate);
 
     @Query("for p in process_instances \n" +
             "   filter p.isTemplate == false \n" +

@@ -6,21 +6,29 @@ import com.github.amag.processorchestrator.criteria.Criteria;
 import com.github.amag.processorchestrator.domain.Process;
 import com.github.amag.processorchestrator.domain.ProcessInstance;
 import com.github.amag.processorchestrator.domain.TaskInstance;
-import com.github.amag.processorchestrator.domain.enums.ProcessInstanceStatus;
-import com.github.amag.processorchestrator.domain.enums.ProcessStatus;
-import com.github.amag.processorchestrator.domain.enums.TaskInstanceStatus;
+import com.github.amag.processorchestrator.domain.enums.*;
+import com.github.amag.processorchestrator.interceptor.ProcessInstanceChangeInterceptor;
 import com.github.amag.processorchestrator.repositories.ProcessInstanceRepository;
 import com.github.amag.processorchestrator.repositories.ProcessRepository;
 import com.github.amag.processorchestrator.repositories.TaskInstanceRepository;
+import com.github.amag.processorchestrator.smconfig.ProcessInstanceStateMachineConfig;
+import com.github.amag.processorchestrator.smconfig.TaskInstanceStateMachineConfig;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Example;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.statemachine.StateMachine;
+import org.springframework.statemachine.config.StateMachineFactory;
+import org.springframework.statemachine.support.DefaultStateMachineContext;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @RequiredArgsConstructor
 @Service
@@ -31,6 +39,8 @@ public class ProcessManager {
     private final ProcessInstanceRepository processInstanceRepository;
     private final TaskInstanceRepository taskInstanceRepository;
     private final ArangoOperations arangoOperations;
+    private final StateMachineFactory<ProcessInstanceStatus, ProcessInstanceEvent> processInstanceStateMachineFactory;
+    private final ProcessInstanceChangeInterceptor processInstanceChangeInterceptor;
 
     public void instantiateJob() {
 
@@ -138,13 +148,14 @@ public class ProcessManager {
         instance2TaskInstances.add(taskInstance2TaskInstance);
     }
 
-    public void startProcess(){
+    // Not in use
+    public void startSingleProcess(){
 
         Optional<ProcessInstance> optionalProcessInstance = processInstanceRepository.findByStatusAndIsTemplate(ProcessInstanceStatus.PENDING, false);
         log.debug("Found process instance? {} ",optionalProcessInstance.isPresent());
 
         optionalProcessInstance.ifPresentOrElse(foundProcessInstance -> {
-            foundProcessInstance.setStatus(ProcessInstanceStatus.RESERVED);
+            foundProcessInstance.setStatus(ProcessInstanceStatus.READY);
             processInstanceRepository.save(foundProcessInstance);
             ProcessContext processContext = new ProcessContext();
             foundProcessInstance.setStatus(ProcessInstanceStatus.INPROGRESS);
@@ -154,14 +165,26 @@ public class ProcessManager {
                 log.debug("Didn't find any pending process instance"));
     }
 
+    public void startMultipleProcess() {
+
+        List<ProcessInstance> processInstances = processInstanceRepository.findAllByStatusAndIsTemplate(ProcessInstanceStatus.PENDING, false);
+        if (processInstances != null && processInstances.size() > 0) {
+            processInstances.forEach(foundProcessInstance -> {
+                foundProcessInstance.setStatus(ProcessInstanceStatus.READY);
+                processInstanceRepository.save(foundProcessInstance);
+                sendProcessInstanceEvent(UUID.fromString(foundProcessInstance.getArangoKey()),ProcessInstanceEvent.PICKEDUP, ProcessInstanceStatus.INPROGRESS);
+            });
+
+        }
+    }
+
     public void completeProcess(){
 
         List<ProcessInstance> processInstances = processInstanceRepository.findCompletedProcessInstances(TaskInstanceStatus.COMPLETED, ProcessInstanceStatus.COMPLETED);
         if (processInstances != null && processInstances.size()>0){
             log.debug("Found {} completed process instance",processInstances.size());
             processInstances.forEach(processInstance -> {
-                processInstance.setStatus(ProcessInstanceStatus.COMPLETED);
-                processInstanceRepository.save(processInstance);
+                sendProcessInstanceEvent(UUID.fromString(processInstance.getArangoKey()),ProcessInstanceEvent.FINISHED,ProcessInstanceStatus.COMPLETED);
             });
         } else {
             log.debug("Didn't find any completed process instances");
@@ -171,6 +194,74 @@ public class ProcessManager {
     private class TaskInstance2TaskInstance
     {
         public TaskInstance from, to;
+    }
+
+    public void sendProcessInstanceEvent(UUID instanceId, ProcessInstanceEvent processInstanceEvent, ProcessInstanceStatus targetStatusEnum ){
+        Optional<ProcessInstance> optionalProcessInstance = processInstanceRepository.findById(instanceId);
+        optionalProcessInstance.ifPresentOrElse(processInstance -> {
+            StateMachine<ProcessInstanceStatus, ProcessInstanceEvent> stateMachine = build(processInstance);
+            Message message
+                    = MessageBuilder.withPayload(processInstanceEvent)
+                    .setHeader(ProcessInstanceStateMachineConfig.PROCESS_INSTANCE_ID_HEADER,processInstance.getArangoKey())
+                    .build();
+            stateMachine.sendEvent(message);
+            awaitForStatus(UUID.fromString(processInstance.getArangoKey()), targetStatusEnum);
+            if(stateMachine.hasStateMachineError()){
+                sendProcessInstanceEvent(UUID.fromString(processInstance.getArangoKey()), ProcessInstanceEvent.ERROR_OCCURRED, ProcessInstanceStatus.FAILED);
+            }
+        },() -> {
+            log.error("Error while sending event");
+        });
+    }
+
+    private void awaitForStatus(UUID instanceId, ProcessInstanceStatus statusEnum) {
+
+        AtomicBoolean found = new AtomicBoolean(false);
+        AtomicInteger loopCount = new AtomicInteger(0);
+
+        while (!found.get()) {
+            if (loopCount.incrementAndGet() > 10) {
+                found.set(true);
+                log.debug("Loop Retries exceeded");
+            }
+
+            processInstanceRepository.findById(instanceId).ifPresentOrElse(processInstance -> {
+                if (statusEnum.equals(processInstance.getStatus())) {
+                    found.set(true);
+                    log.debug("Instance Found");
+                } else {
+                    log.debug("Instance Status Not Equal. Expected: " + statusEnum.name() + " Found: " + processInstance.getStatus().name());
+                }
+            }, () -> {
+                log.debug("Instance Id Not Found");
+            });
+
+            if (!found.get()) {
+                try {
+                    log.debug("Sleeping for retry");
+                    Thread.sleep(100);
+                } catch (Exception e) {
+                    // do nothing
+                }
+            }
+        }
+
+    }
+
+
+    private StateMachine<ProcessInstanceStatus, ProcessInstanceEvent> build(ProcessInstance processInstance){
+        StateMachine<ProcessInstanceStatus, ProcessInstanceEvent> stateMachine = processInstanceStateMachineFactory.getStateMachine(UUID.fromString(processInstance.getArangoKey()));
+        stateMachine.stop();
+
+        stateMachine.getStateMachineAccessor()
+                .doWithAllRegions(
+                        sma -> {
+                            sma.addStateMachineInterceptor(processInstanceChangeInterceptor);
+                            sma.resetStateMachine(new DefaultStateMachineContext<>(processInstance.getStatus(), null,null,null));
+                        }
+                );
+        stateMachine.start();
+        return stateMachine;
     }
 
 }
