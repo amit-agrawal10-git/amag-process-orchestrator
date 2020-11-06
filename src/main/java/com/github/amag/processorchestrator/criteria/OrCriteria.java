@@ -1,5 +1,6 @@
 package com.github.amag.processorchestrator.criteria;
 
+import com.arangodb.springframework.core.ArangoOperations;
 import com.github.amag.processorchestrator.domain.BaseObject;
 import lombok.RequiredArgsConstructor;
 
@@ -9,8 +10,8 @@ public class OrCriteria<T extends BaseObject> implements Criteria<T> {
     private final Criteria<T> firstCriteria, secondCriteria;
 
     @Override
-    public T evaluate(T o) {
-        T x = firstCriteria.evaluate(o);
-        return (x.isCriteriaResult())?x:secondCriteria.evaluate(o);
+    public T evaluate(T o, ArangoOperations arangoOperations) {
+        T x = firstCriteria.evaluate(o, arangoOperations);
+        return (x.isCriteriaResult())?x:secondCriteria.evaluate(o, arangoOperations);
     }
 }

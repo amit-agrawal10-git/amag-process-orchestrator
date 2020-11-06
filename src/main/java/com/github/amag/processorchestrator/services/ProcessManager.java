@@ -1,5 +1,6 @@
 package com.github.amag.processorchestrator.services;
 
+import com.arangodb.springframework.core.ArangoOperations;
 import com.github.amag.processorchestrator.context.ProcessContext;
 import com.github.amag.processorchestrator.criteria.Criteria;
 import com.github.amag.processorchestrator.domain.Process;
@@ -29,6 +30,7 @@ public class ProcessManager {
     private final ProcessRepository processRepository;
     private final ProcessInstanceRepository processInstanceRepository;
     private final TaskInstanceRepository taskInstanceRepository;
+    private final ArangoOperations arangoOperations;
 
     public void instantiateJob() {
 
@@ -53,8 +55,6 @@ public class ProcessManager {
                     for (Date date = start.getTime(); start.before(end); start.add(Calendar.DATE, 1),
                             date = start.getTime()) {
 
-
-
                         ProcessInstance processInstance = process.getProcessTemplate()
                                 .toBuilder()
                                 .processDate(date)
@@ -63,8 +63,8 @@ public class ProcessManager {
                                 .build()
                                 ;
                         Criteria<ProcessInstance> processInstanceCriteria = null;
-                        if((processInstanceCriteria = processInstance.getExecutionCriteria()) != null){
-                            if (!processInstanceCriteria.evaluate(processInstance).isCriteriaResult()){
+                        if((processInstanceCriteria = processInstance.getInstantiationCriteria()) != null){
+                            if (!processInstanceCriteria.evaluate(processInstance, arangoOperations).isCriteriaResult()){
                                 continue;
                             }
                         }
@@ -77,7 +77,8 @@ public class ProcessManager {
                         tempInstances.forEach(x -> {
                             x.from.getDependsOn().add(x.to);
                         });
-                        processInstanceRepository.save(processInstance);
+                        ProcessInstance savedProcessInstance = processInstanceRepository.save(processInstance);
+                        log.debug("Process Date {} saved process instance id {}",date, savedProcessInstance.getArangoId());
                         for (int i = newTaskInstances.size() - 1; i >= 0; i--)
                             taskInstanceRepository.save(newTaskInstances.get(i));
                         process.setExecutedUpto(date);

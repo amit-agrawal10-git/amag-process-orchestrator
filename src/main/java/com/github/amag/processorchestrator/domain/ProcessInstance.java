@@ -44,6 +44,8 @@ public class ProcessInstance extends BaseObject {
 
     private boolean isTemplate;
 
+    private Criteria<ProcessInstance> instantiationCriteria;
+
     private Criteria<ProcessInstance> executionCriteria;
 
 }
