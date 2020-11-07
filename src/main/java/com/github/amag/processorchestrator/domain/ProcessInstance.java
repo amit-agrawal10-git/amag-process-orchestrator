@@ -22,7 +22,6 @@ import java.util.Date;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder(toBuilder = true)
-@HashIndex(fields = {"processDate","processTemplate"}, unique = true)
 public class ProcessInstance extends BaseObject {
 
     private String name;
