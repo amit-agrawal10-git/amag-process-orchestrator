@@ -172,9 +172,13 @@ public class ProcessManager {
             processInstances.forEach(foundProcessInstance -> {
                 foundProcessInstance.setStatus(ProcessInstanceStatus.READY);
                 processInstanceRepository.save(foundProcessInstance);
+            });
+        }
+        List<ProcessInstance> readyProcessInstances = processInstanceRepository.findAllByStatusAndIsTemplate(ProcessInstanceStatus.READY, false);
+        if (readyProcessInstances != null && readyProcessInstances.size() > 0) {
+            readyProcessInstances.forEach(foundProcessInstance -> {
                 sendProcessInstanceEvent(UUID.fromString(foundProcessInstance.getArangoKey()),ProcessInstanceEvent.PICKEDUP, ProcessInstanceStatus.INPROGRESS);
             });
-
         }
     }
 
