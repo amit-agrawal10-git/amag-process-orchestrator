@@ -10,6 +10,7 @@ import com.github.amag.processorchestrator.smconfig.TaskInstanceStateMachineConf
 import com.github.amag.processorchestrator.task.types.SimpleAction;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.statemachine.StateMachine;
@@ -45,19 +46,25 @@ public class TaskManager {
         }
     }
 
-    public void startTask(){
-        Optional<TaskInstance> optionalTaskInstance = taskInstanceRepository.findByStatus(TaskInstanceStatus.READY);
-        log.debug("Found task instance? {} ",optionalTaskInstance.isPresent());
-
-        optionalTaskInstance.ifPresentOrElse(foundTaskInstance -> {
-            foundTaskInstance.setStatus(TaskInstanceStatus.STARTED);
-            final TaskInstance savedTaskInstance = taskInstanceRepository.save(foundTaskInstance);
-                Object object = savedTaskInstance.getTaskTemplate().getBaseAction();
-                if (object instanceof SimpleAction) {
-                    sendTaskInstanceEvent(UUID.fromString(savedTaskInstance.getArangoKey()), TaskInstanceEvent.FINISHED, TaskInstanceStatus.COMPLETED);
-                }
-        }, () ->
-                log.debug("Didn't find any ready task instance"));
+    public void startMultipleTask(final int maximumActiveTask){
+        // todo include spring property
+        long activeTaskCount = taskInstanceRepository.countByStatus(TaskInstanceStatus.STARTED);
+        if (activeTaskCount < maximumActiveTask) {
+        taskInstanceRepository.updateStatusFromTo(TaskInstanceStatus.READY, TaskInstanceStatus.STARTED, maximumActiveTask);
+            List<TaskInstance> taskInstances = taskInstanceRepository.findByStatus(TaskInstanceStatus.STARTED);
+            if (taskInstances != null && !taskInstances.isEmpty()) {
+                taskInstances.forEach(foundTaskInstance -> {
+                    Object object = foundTaskInstance.getTaskTemplate().getBaseAction();
+                    if (object instanceof SimpleAction) {
+                        sendTaskInstanceEvent(UUID.fromString(foundTaskInstance.getArangoKey()), TaskInstanceEvent.FINISHED, TaskInstanceStatus.COMPLETED);
+                    }
+                });
+            } else {
+                log.debug("Didn't find any ready task instance");
+            }
+        } else {
+            log.debug("Maximum number of tasks are already running");
+        }
     }
 
     public void sendTaskInstanceEvent(UUID taskInstanceId, TaskInstanceEvent taskInstanceEvent, TaskInstanceStatus targetStatusEnum ){
