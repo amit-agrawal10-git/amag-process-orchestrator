@@ -43,6 +43,8 @@ public interface TaskInstanceRepository extends ArangoRepository<TaskInstance, U
 
     @Query("for i in task_instances \n" +
             " filter i.status == @from " +
+            " filter i.isTemplate == false " +
+            " sort i.processInstance " +
             " limit @limit \n" +
             " update i with {status : @to} in task_instances")
     void updateStatusFromTo(@Param("from") TaskInstanceStatus from,@Param("to") TaskInstanceStatus to, Integer limit);

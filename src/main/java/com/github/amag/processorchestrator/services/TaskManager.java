@@ -47,7 +47,7 @@ public class TaskManager {
     }
 
     public void startMultipleTask(final int maximumActiveTask){
-        // todo include spring property
+
         long activeTaskCount = taskInstanceRepository.countByStatus(TaskInstanceStatus.STARTED);
         if (activeTaskCount < maximumActiveTask) {
         taskInstanceRepository.updateStatusFromTo(TaskInstanceStatus.READY, TaskInstanceStatus.STARTED, maximumActiveTask);
