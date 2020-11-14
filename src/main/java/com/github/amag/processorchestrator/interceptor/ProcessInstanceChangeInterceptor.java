@@ -3,11 +3,9 @@ package com.github.amag.processorchestrator.interceptor;
 import com.arangodb.springframework.core.ArangoOperations;
 import com.github.amag.processorchestrator.domain.ErrorLog;
 import com.github.amag.processorchestrator.domain.ProcessInstance;
-import com.github.amag.processorchestrator.domain.TaskInstance;
+import com.github.amag.processorchestrator.domain.TransitionLog;
 import com.github.amag.processorchestrator.domain.enums.*;
-import com.github.amag.processorchestrator.repositories.TaskInstanceRepository;
 import com.github.amag.processorchestrator.smconfig.ProcessInstanceStateMachineConfig;
-import com.github.amag.processorchestrator.smconfig.TaskInstanceStateMachineConfig;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.Message;
@@ -32,7 +30,7 @@ public class ProcessInstanceChangeInterceptor extends StateMachineInterceptorAda
 
     @Override
     @Transactional
-    public void preStateChange(State<ProcessInstanceStatus, ProcessInstanceEvent> state,
+    public void postStateChange(State<ProcessInstanceStatus, ProcessInstanceEvent> state,
                                Message<ProcessInstanceEvent> message,
                                Transition<ProcessInstanceStatus, ProcessInstanceEvent> transition,
                                StateMachine<ProcessInstanceStatus, ProcessInstanceEvent> stateMachine) {
@@ -41,6 +39,14 @@ public class ProcessInstanceChangeInterceptor extends StateMachineInterceptorAda
                 .ifPresent(instanceId -> {
                         log.debug("Saving state for id: "+instanceId+" Status: "+state.getId());
                         final ProcessInstance instance = arangoOperations.find(UUID.fromString(instanceId),ProcessInstance.class).get();
+                            TransitionLog transitionLog = TransitionLog.builder()
+                                    .entityType(EntityType.TASK_INSTANCE)
+                                    .entityId(stateMachine.getUuid())
+                                    .fromState(instance.getStatus().toString())
+                                    .toState(state.getId().toString())
+                                    .build();
+                            arangoOperations.insert(transitionLog);
+
                         instance.setStatus(state.getId());
                         arangoOperations.repsert(instance);
                 }
@@ -55,7 +61,7 @@ public class ProcessInstanceChangeInterceptor extends StateMachineInterceptorAda
         exception.printStackTrace(pw);
         ErrorLog errorLog = ErrorLog.builder()
                 .entityId(stateMachine.getUuid())
-                .entityType(ErrorLogTypes.PROCESS_INSTANCE)
+                .entityType(EntityType.PROCESS_INSTANCE)
                 .stackTrace(sw.toString())
                 .build();
         arangoOperations.insert(errorLog);

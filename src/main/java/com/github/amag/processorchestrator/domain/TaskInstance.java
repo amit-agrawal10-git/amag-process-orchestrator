@@ -3,6 +3,7 @@ package com.github.amag.processorchestrator.domain;
 
 import com.arangodb.entity.KeyType;
 import com.arangodb.springframework.annotation.Document;
+import com.arangodb.springframework.annotation.HashIndex;
 import com.arangodb.springframework.annotation.Ref;
 import com.github.amag.processorchestrator.domain.enums.TaskInstanceStatus;
 import com.github.amag.processorchestrator.task.types.BaseAction;
@@ -27,12 +28,6 @@ public class TaskInstance extends BaseObject {
     private BaseAction baseAction;
 
     private TaskInstanceStatus status;
-
-    @CreatedDate
-    private Date createdWhen;
-
-    @LastModifiedDate
-    private Date modifiedWhen;
 
     private boolean isTemplate;
 

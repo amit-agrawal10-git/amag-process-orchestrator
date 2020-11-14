@@ -12,23 +12,25 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 @Service
 @Slf4j
-@Profile("!micro")
 public class ProcessTaskScheduler {
 
     private final TaskManager taskManager;
     @Value("${amag.task.job.start.limit:10}")
     private int maximumActiveTask;
 
-    @Scheduled(fixedDelayString = "${amag.task.job.start.delay}")
-    @Transactional
+    @Scheduled(fixedRateString = "${amag.task.job.start.delay:500}")
     protected void startTask() {
-        taskManager.startMultipleTask(maximumActiveTask);
+        taskManager.startTask(maximumActiveTask);
     }
 
-    @Scheduled(fixedDelayString = "${amag.task.job.ready.delay}")
-    @Transactional
+    @Scheduled(fixedRateString = "${amag.task.job.ready.delay:500}")
     protected void findReadyTask() {
         taskManager.findAndMarkReadyTask();
+    }
+
+    @Scheduled(fixedRateString = "${amag.task.job.execute.delay:500}")
+    protected void executeTask() {
+        taskManager.executeTask();
     }
 
 }

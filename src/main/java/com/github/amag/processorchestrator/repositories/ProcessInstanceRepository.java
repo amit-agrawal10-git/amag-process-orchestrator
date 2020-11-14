@@ -17,7 +17,6 @@ import java.util.UUID;
 public interface ProcessInstanceRepository extends ArangoRepository<ProcessInstance, UUID> {
 
     Optional<ProcessInstance> findByStatusAndIsTemplate(ProcessInstanceStatus processInstanceStatus,boolean IsTemplate);
-    List<ProcessInstance> findAllByStatusAndIsTemplate(ProcessInstanceStatus processInstanceStatus,boolean IsTemplate);
 
     @Query("for p in process_instances \n" +
             "   filter p.isTemplate == false \n" +
@@ -27,8 +26,8 @@ public interface ProcessInstanceRepository extends ArangoRepository<ProcessInsta
             "   filter t.isTemplate == false \n" +
             "   filter t.processInstance == p._id\n" +
             "   return t.status) ALL IN [@currentTaskStatus]\n" +
-            "   return p")
-    List<ProcessInstance> findCompletedProcessInstances(@Param("currentTaskStatus") TaskInstanceStatus currentTaskStatus,
+            "   limit 1 return p")
+    Optional<ProcessInstance> findCompletedProcessInstance(@Param("currentTaskStatus") TaskInstanceStatus currentTaskStatus,
                                                @Param("currentProcessStatus") ProcessInstanceStatus currentProcessStatus);
 
 }

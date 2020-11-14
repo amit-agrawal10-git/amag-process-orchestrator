@@ -47,7 +47,11 @@ public class ProcessInstanceStateMachineConfig extends StateMachineConfigurerAda
     @Override
     public void configure(StateMachineTransitionConfigurer<ProcessInstanceStatus, ProcessInstanceEvent> transitions) throws Exception {
         transitions.withExternal()
+                .source(ProcessInstanceStatus.PENDING)
+                .target(ProcessInstanceStatus.READY)
+                .event(ProcessInstanceEvent.DEPENDENCY_RESOLVED)
 
+                .and().withExternal()
                     .source(ProcessInstanceStatus.READY)
                     .target(ProcessInstanceStatus.INPROGRESS)
                     .event(ProcessInstanceEvent.PICKEDUP)

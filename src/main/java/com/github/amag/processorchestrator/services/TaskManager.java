@@ -11,6 +11,7 @@ import com.github.amag.processorchestrator.task.types.SimpleAction;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationContext;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.statemachine.StateMachine;
@@ -18,6 +19,7 @@ import org.springframework.statemachine.config.StateMachineFactory;
 import org.springframework.statemachine.support.DefaultStateMachineContext;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.PostConstruct;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -34,37 +36,32 @@ public class TaskManager {
     private final TaskInstanceChangeInterceptor taskInstanceChangeInterceptor;
 
     public void findAndMarkReadyTask(){
-        List<TaskInstance> taskInstances = taskInstanceRepository.findTaskInstanceToStart(TaskInstanceStatus.PENDING, ProcessInstanceStatus.INPROGRESS, TaskInstanceStatus.COMPLETED);
-        if(taskInstances !=null) {
-            log.debug("Found task instances? {} ",taskInstances.size());
-            for (final TaskInstance taskInstance:taskInstances) {
-                taskInstance.setStatus(TaskInstanceStatus.READY);
-                taskInstanceRepository.save(taskInstance);
-            }
-        } else {
-            log.debug("Didn't find any ready task");
-        }
+        Optional<TaskInstance> optionalTaskInstance = taskInstanceRepository.findTaskInstanceToStart(TaskInstanceStatus.PENDING, ProcessInstanceStatus.INPROGRESS, TaskInstanceStatus.COMPLETED);
+        optionalTaskInstance.ifPresentOrElse(taskInstance -> {
+            sendTaskInstanceEvent(UUID.fromString(taskInstance.getArangoKey()),TaskInstanceEvent.DEPENDENCY_RESOLVED,null);
+        },() ->  log.debug("Didn't find any ready task"));
     }
 
-    public void startMultipleTask(final int maximumActiveTask){
-
+    public void startTask(final int maximumActiveTask){
         long activeTaskCount = taskInstanceRepository.countByStatus(TaskInstanceStatus.STARTED);
         if (activeTaskCount < maximumActiveTask) {
-        taskInstanceRepository.updateStatusFromTo(TaskInstanceStatus.READY, TaskInstanceStatus.STARTED, maximumActiveTask);
-            List<TaskInstance> taskInstances = taskInstanceRepository.findByStatus(TaskInstanceStatus.STARTED);
-            if (taskInstances != null && !taskInstances.isEmpty()) {
-                taskInstances.forEach(foundTaskInstance -> {
-                    Object object = foundTaskInstance.getTaskTemplate().getBaseAction();
-                    if (object instanceof SimpleAction) {
-                        sendTaskInstanceEvent(UUID.fromString(foundTaskInstance.getArangoKey()), TaskInstanceEvent.FINISHED, TaskInstanceStatus.COMPLETED);
-                    }
-                });
-            } else {
-                log.debug("Didn't find any ready task instance");
-            }
+            Optional<TaskInstance> optionalTaskInstance = taskInstanceRepository.findByStatus(TaskInstanceStatus.READY);
+            optionalTaskInstance.ifPresentOrElse(foundTaskInstance -> {
+                sendTaskInstanceEvent(UUID.fromString(foundTaskInstance.getArangoKey()), TaskInstanceEvent.PICKEDUP, null);
+            },()-> log.debug("Didn't find any ready task instance"));
         } else {
             log.debug("Maximum number of tasks are already running");
         }
+    }
+
+    public void executeTask(){
+            Optional<TaskInstance> optionalTaskInstance = taskInstanceRepository.findByStatus(TaskInstanceStatus.STARTED);
+            optionalTaskInstance.ifPresentOrElse(foundTaskInstance -> {
+                Object object = foundTaskInstance.getTaskTemplate().getBaseAction();
+                if (object instanceof SimpleAction) {
+                    sendTaskInstanceEvent(UUID.fromString(foundTaskInstance.getArangoKey()), TaskInstanceEvent.FINISHED, null);
+                }
+            }, ()-> log.debug("Didn't find any started task instance"));
     }
 
     public void sendTaskInstanceEvent(UUID taskInstanceId, TaskInstanceEvent taskInstanceEvent, TaskInstanceStatus targetStatusEnum ){
@@ -76,7 +73,8 @@ public class TaskManager {
                     .setHeader(TaskInstanceStateMachineConfig.TASK_INSTANCE_ID_HEADER,taskInstance.getArangoKey())
                     .build();
             stateMachine.sendEvent(message);
-            awaitForStatus(UUID.fromString(taskInstance.getArangoKey()), targetStatusEnum);
+            if(targetStatusEnum!=null)
+                awaitForStatus(UUID.fromString(taskInstance.getArangoKey()), targetStatusEnum);
             if(stateMachine.hasStateMachineError()){
                 sendTaskInstanceEvent(UUID.fromString(taskInstance.getArangoKey()), TaskInstanceEvent.ERROR_OCCURRED, TaskInstanceStatus.FAILED);
             }

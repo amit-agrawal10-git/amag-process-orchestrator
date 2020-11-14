@@ -30,9 +30,9 @@ public class StartProcessAction implements Action<ProcessInstanceStatus, Process
 
         optionalProcessInstance.ifPresentOrElse(instance -> {
 
-              ProcessContext processContext = new ProcessContext();
+             /* ProcessContext processContext = new ProcessContext();
                 instance.setProcessContext(processContext);
-                arangoOperations.repsert(instance);
+                arangoOperations.repsert(instance);*/
 
             }, () ->
                         log.error("Process Instance Not Found Id: {}", instanceId)

@@ -28,18 +28,10 @@ public class ProcessInstance extends BaseObject {
 
     private ProcessInstanceStatus status;
 
-    @CreatedDate
-    private Date createdWhen;
-
-    @LastModifiedDate
-    private Date modifiedWhen;
-
     private Date processDate;
 
     @Ref(lazy = true)
     private ProcessInstance processTemplate;
-
-    private ProcessContext processContext;
 
     private boolean isTemplate;
 

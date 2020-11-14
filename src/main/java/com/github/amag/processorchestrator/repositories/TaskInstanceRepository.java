@@ -36,8 +36,8 @@ public interface TaskInstanceRepository extends ArangoRepository<TaskInstance, U
             "     FILTER t.dependsOn ALL IN (FOR X IN task_instances FILTER X.processInstance == t.processInstance \n" +
             "     FILTER X.status == @taskDependsOnStatus \n" +
             "     return X._id) OR t.dependsOn == NULL\n" +
-            "RETURN t")
-    List<TaskInstance> findTaskInstanceToStart(@Param("currentTaskStatus") TaskInstanceStatus currentTaskStatus,
+            "limit 1 RETURN t")
+    Optional<TaskInstance> findTaskInstanceToStart(@Param("currentTaskStatus") TaskInstanceStatus currentTaskStatus,
                                      @Param("currentProcessStatus") ProcessInstanceStatus currentProcessStatus,
                                      @Param("taskDependsOnStatus") TaskInstanceStatus taskDependsOnStatus);
 
@@ -49,7 +49,7 @@ public interface TaskInstanceRepository extends ArangoRepository<TaskInstance, U
             " update i with {status : @to} in task_instances")
     void updateStatusFromTo(@Param("from") TaskInstanceStatus from,@Param("to") TaskInstanceStatus to, Integer limit);
 
-    List<TaskInstance> findByStatus(TaskInstanceStatus taskInstanceStatus);
+    Optional<TaskInstance> findByStatus(TaskInstanceStatus taskInstanceStatus);
     long countByStatus(TaskInstanceStatus taskInstanceStatus);
 
 }

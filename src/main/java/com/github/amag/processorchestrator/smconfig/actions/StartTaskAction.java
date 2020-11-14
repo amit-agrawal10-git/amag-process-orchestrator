@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.statemachine.StateContext;
 import org.springframework.statemachine.action.Action;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.Optional;
@@ -27,6 +28,7 @@ public class StartTaskAction implements Action<TaskInstanceStatus, TaskInstanceE
     private final SimpleActionExecutor simpleActionExecutor;
 
     @Override
+    @Transactional
     public void execute(StateContext<TaskInstanceStatus, TaskInstanceEvent> stateContext) {
         log.debug("start task instance was called");
         UUID taskInstanceId = UUID.fromString(stateContext.getMessageHeader(TaskInstanceStateMachineConfig.TASK_INSTANCE_ID_HEADER).toString());

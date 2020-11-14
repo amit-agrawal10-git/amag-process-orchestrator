@@ -2,12 +2,13 @@ package com.github.amag.processorchestrator.interceptor;
 
 import com.arangodb.springframework.core.ArangoOperations;
 import com.github.amag.processorchestrator.domain.ErrorLog;
-import com.github.amag.processorchestrator.domain.enums.ErrorLogTypes;
-import com.github.amag.processorchestrator.smconfig.TaskInstanceStateMachineConfig;
 import com.github.amag.processorchestrator.domain.TaskInstance;
+import com.github.amag.processorchestrator.domain.TransitionLog;
+import com.github.amag.processorchestrator.domain.enums.EntityType;
 import com.github.amag.processorchestrator.domain.enums.TaskInstanceEvent;
 import com.github.amag.processorchestrator.domain.enums.TaskInstanceStatus;
 import com.github.amag.processorchestrator.repositories.TaskInstanceRepository;
+import com.github.amag.processorchestrator.smconfig.TaskInstanceStateMachineConfig;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.Message;
@@ -33,13 +34,20 @@ public class TaskInstanceChangeInterceptor extends StateMachineInterceptorAdapte
 
     @Override
     @Transactional
-    public void preStateChange(State<TaskInstanceStatus, TaskInstanceEvent> state, Message<TaskInstanceEvent> message, Transition<TaskInstanceStatus, TaskInstanceEvent> transition, StateMachine<TaskInstanceStatus, TaskInstanceEvent> stateMachine) {
+    public void postStateChange(State<TaskInstanceStatus, TaskInstanceEvent> state, Message<TaskInstanceEvent> message, Transition<TaskInstanceStatus, TaskInstanceEvent> transition, StateMachine<TaskInstanceStatus, TaskInstanceEvent> stateMachine) {
         Optional.ofNullable(message)
                 .flatMap(msg -> Optional.ofNullable((String) msg.getHeaders().getOrDefault(TaskInstanceStateMachineConfig.TASK_INSTANCE_ID_HEADER, " ")))
                 .ifPresent(taskInstanceId -> {
                         log.debug("Saving state for order id: "+taskInstanceId+" Status: "+state.getId());
                             TaskInstance taskInstance = taskInstanceRepository.findById(UUID.fromString(taskInstanceId)).get();
-                        taskInstance.setStatus(state.getId());
+                            TransitionLog transitionLog = TransitionLog.builder()
+                                    .entityType(EntityType.TASK_INSTANCE)
+                                    .entityId(stateMachine.getUuid())
+                                    .fromState(taskInstance.getStatus().toString())
+                                    .toState(state.getId().toString())
+                                    .build();
+                            arangoOperations.insert(transitionLog);
+                            taskInstance.setStatus(state.getId());
                         taskInstanceRepository.save(taskInstance);
                 }
                 );
@@ -53,7 +61,7 @@ public class TaskInstanceChangeInterceptor extends StateMachineInterceptorAdapte
         exception.printStackTrace(pw);
         ErrorLog errorLog = ErrorLog.builder()
                 .entityId(stateMachine.getUuid())
-                .entityType(ErrorLogTypes.TASK_INSTANCE)
+                .entityType(EntityType.TASK_INSTANCE)
                 .stackTrace(sw.toString())
                 .build();
         arangoOperations.insert(errorLog);

@@ -148,51 +148,26 @@ public class ProcessManager {
         instance2TaskInstances.add(taskInstance2TaskInstance);
     }
 
-    // Not in use
-    public void startSingleProcess(){
-
+    public void findAndMarkReady() {
         Optional<ProcessInstance> optionalProcessInstance = processInstanceRepository.findByStatusAndIsTemplate(ProcessInstanceStatus.PENDING, false);
-        log.debug("Found process instance? {} ",optionalProcessInstance.isPresent());
-
         optionalProcessInstance.ifPresentOrElse(foundProcessInstance -> {
-            foundProcessInstance.setStatus(ProcessInstanceStatus.READY);
-            processInstanceRepository.save(foundProcessInstance);
-            ProcessContext processContext = new ProcessContext();
-            foundProcessInstance.setStatus(ProcessInstanceStatus.INPROGRESS);
-            foundProcessInstance.setProcessContext(processContext);
-            processInstanceRepository.save(foundProcessInstance);
-        }, () ->
-                log.debug("Didn't find any pending process instance"));
+            sendProcessInstanceEvent(UUID.fromString(foundProcessInstance.getArangoKey()),ProcessInstanceEvent.DEPENDENCY_RESOLVED, null);
+        }, ()-> log.debug("No pending process instance found"));
     }
 
-    public void startMultipleProcess() {
+    public void startProcess() {
 
-        List<ProcessInstance> processInstances = processInstanceRepository.findAllByStatusAndIsTemplate(ProcessInstanceStatus.PENDING, false);
-        if (processInstances != null && processInstances.size() > 0) {
-            processInstances.forEach(foundProcessInstance -> {
-                foundProcessInstance.setStatus(ProcessInstanceStatus.READY);
-                processInstanceRepository.save(foundProcessInstance);
-            });
-        }
-        List<ProcessInstance> readyProcessInstances = processInstanceRepository.findAllByStatusAndIsTemplate(ProcessInstanceStatus.READY, false);
-        if (readyProcessInstances != null && readyProcessInstances.size() > 0) {
-            readyProcessInstances.forEach(foundProcessInstance -> {
-                sendProcessInstanceEvent(UUID.fromString(foundProcessInstance.getArangoKey()),ProcessInstanceEvent.PICKEDUP, ProcessInstanceStatus.INPROGRESS);
-            });
-        }
+        Optional<ProcessInstance> optionalProcessInstance = processInstanceRepository.findByStatusAndIsTemplate(ProcessInstanceStatus.READY, false);
+        optionalProcessInstance.ifPresentOrElse(foundProcessInstance -> {
+            sendProcessInstanceEvent(UUID.fromString(foundProcessInstance.getArangoKey()),ProcessInstanceEvent.PICKEDUP, null);
+        }, ()-> log.debug("No ready process instance found"));
     }
 
     public void completeProcess(){
-
-        List<ProcessInstance> processInstances = processInstanceRepository.findCompletedProcessInstances(TaskInstanceStatus.COMPLETED, ProcessInstanceStatus.COMPLETED);
-        if (processInstances != null && processInstances.size()>0){
-            log.debug("Found {} completed process instance",processInstances.size());
-            processInstances.forEach(processInstance -> {
-                sendProcessInstanceEvent(UUID.fromString(processInstance.getArangoKey()),ProcessInstanceEvent.FINISHED,ProcessInstanceStatus.COMPLETED);
-            });
-        } else {
-            log.debug("Didn't find any completed process instances");
-        }
+        Optional<ProcessInstance> optionalProcessInstance = processInstanceRepository.findCompletedProcessInstance(TaskInstanceStatus.COMPLETED, ProcessInstanceStatus.COMPLETED);
+        optionalProcessInstance.ifPresentOrElse(foundProcessInstance -> {
+            sendProcessInstanceEvent(UUID.fromString(foundProcessInstance.getArangoKey()),ProcessInstanceEvent.FINISHED, null);
+        }, ()-> log.debug("No process instance found to be completed"));
     }
 
     private class TaskInstance2TaskInstance
@@ -209,7 +184,8 @@ public class ProcessManager {
                     .setHeader(ProcessInstanceStateMachineConfig.PROCESS_INSTANCE_ID_HEADER,processInstance.getArangoKey())
                     .build();
             stateMachine.sendEvent(message);
-            awaitForStatus(UUID.fromString(processInstance.getArangoKey()), targetStatusEnum);
+            if(targetStatusEnum!= null)
+              awaitForStatus(UUID.fromString(processInstance.getArangoKey()), targetStatusEnum);
             if(stateMachine.hasStateMachineError()){
                 sendProcessInstanceEvent(UUID.fromString(processInstance.getArangoKey()), ProcessInstanceEvent.ERROR_OCCURRED, ProcessInstanceStatus.FAILED);
             }

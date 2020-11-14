@@ -11,25 +11,27 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 @Service
 @Slf4j
-@Profile("!micro")
 public class ProcessScheduler {
 
     private final ProcessManager processManager;
 
-    @Scheduled(fixedDelayString = "${amag.process.job.instantiate.delay}")
+    @Scheduled(fixedDelayString = "${amag.process.job.instantiate.delay:5000}")
     @Transactional
     protected void instantiateJob() {
         processManager.instantiateJob();
     }
 
-    @Scheduled(fixedDelayString = "${amag.process.job.start.delay}")
-    @Transactional
-    protected void startJob() {
-        processManager.startMultipleProcess();
+    @Scheduled(fixedRateString = "${amag.process.job.ready.delay:1000}")
+    protected void markreadyJob() {
+        processManager.findAndMarkReady();
     }
 
-    @Scheduled(fixedDelayString = "${amag.process.job.finish.delay}")
-    @Transactional
+    @Scheduled(fixedRateString = "${amag.process.job.start.delay:1000}")
+    protected void startJob() {
+        processManager.startProcess();
+    }
+
+    @Scheduled(fixedRateString = "${amag.process.job.finish.delay:3000}")
     protected void finishJob() {
         processManager.completeProcess();
     }

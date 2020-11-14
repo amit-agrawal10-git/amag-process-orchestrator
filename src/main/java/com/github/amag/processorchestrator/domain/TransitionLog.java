@@ -11,18 +11,17 @@ import lombok.NoArgsConstructor;
 
 import java.util.UUID;
 
-@Document(value = "process_error_log", keyType = KeyType.uuid, allowUserKeys = true)
+@Document(value = "state_transition_log", keyType = KeyType.uuid, allowUserKeys = true)
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ErrorLog extends BaseObject {
+public class TransitionLog extends BaseObject {
 
     private EntityType entityType;
-
     private UUID entityId;
-
-    private String stackTrace;
+    private String fromState;
+    private String toState;
 }
 
 
