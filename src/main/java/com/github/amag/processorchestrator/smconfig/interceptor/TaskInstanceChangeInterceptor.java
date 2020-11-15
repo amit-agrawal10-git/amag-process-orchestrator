@@ -1,4 +1,4 @@
-package com.github.amag.processorchestrator.interceptor;
+package com.github.amag.processorchestrator.smconfig.interceptor;
 
 import com.arangodb.springframework.core.ArangoOperations;
 import com.github.amag.processorchestrator.domain.ErrorLog;
@@ -67,7 +67,5 @@ public class TaskInstanceChangeInterceptor extends StateMachineInterceptorAdapte
         arangoOperations.insert(errorLog);
         return exception;
     }
-
-
 
 }

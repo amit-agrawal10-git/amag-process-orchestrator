@@ -1,7 +1,6 @@
 package com.github.amag.processorchestrator.smconfig.actions;
 
 import com.arangodb.springframework.core.ArangoOperations;
-import com.github.amag.processorchestrator.context.ProcessContext;
 import com.github.amag.processorchestrator.domain.ProcessInstance;
 import com.github.amag.processorchestrator.domain.enums.ProcessInstanceEvent;
 import com.github.amag.processorchestrator.domain.enums.ProcessInstanceStatus;

@@ -1,12 +1,13 @@
 package com.github.amag.processorchestrator.services;
 
 import com.github.amag.processorchestrator.domain.TaskInstance;
+import com.github.amag.processorchestrator.domain.enums.ProcessInstanceEvent;
 import com.github.amag.processorchestrator.domain.enums.ProcessInstanceStatus;
 import com.github.amag.processorchestrator.domain.enums.TaskInstanceEvent;
 import com.github.amag.processorchestrator.domain.enums.TaskInstanceStatus;
-import com.github.amag.processorchestrator.interceptor.TaskInstanceChangeInterceptor;
 import com.github.amag.processorchestrator.repositories.TaskInstanceRepository;
 import com.github.amag.processorchestrator.smconfig.TaskInstanceStateMachineConfig;
+import com.github.amag.processorchestrator.smconfig.interceptor.TaskInstanceChangeInterceptor;
 import com.github.amag.processorchestrator.task.types.SimpleAction;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,10 +19,11 @@ import org.springframework.statemachine.config.StateMachineFactory;
 import org.springframework.statemachine.support.DefaultStateMachineContext;
 import org.springframework.stereotype.Service;
 
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 @RequiredArgsConstructor
 @Service
@@ -31,7 +33,12 @@ public class TaskManager {
     private final TaskInstanceRepository taskInstanceRepository;
     private final StateMachineFactory<TaskInstanceStatus, TaskInstanceEvent> taskInstanceStateMachineFactory;
     private final TaskInstanceChangeInterceptor taskInstanceChangeInterceptor;
+    private final ProcessManager processManager;
 
+    // todo add complete action to clean up old records from map
+    private static Map<UUID, Set<TaskInstanceEvent>> SENT_TASK_EVENTS = new HashMap<>();
+
+    @Async
     public void findAndMarkReadyTask(){
         Optional<TaskInstance> optionalTaskInstance = taskInstanceRepository.findTaskInstanceToStart(TaskInstanceStatus.PENDING, ProcessInstanceStatus.INPROGRESS, TaskInstanceStatus.COMPLETED);
         optionalTaskInstance.ifPresentOrElse(taskInstance -> {
@@ -39,6 +46,7 @@ public class TaskManager {
         },() ->  log.debug("Didn't find any ready task"));
     }
 
+    @Async
     public void startTask(final int maximumActiveTask){
         long activeTaskCount = taskInstanceRepository.countByStatus(TaskInstanceStatus.STARTED);
         if (activeTaskCount < maximumActiveTask) {
@@ -51,6 +59,7 @@ public class TaskManager {
         }
     }
 
+    @Async
     public void executeTask(){
             Optional<TaskInstance> optionalTaskInstance = taskInstanceRepository.findByStatus(TaskInstanceStatus.STARTED);
             optionalTaskInstance.ifPresentOrElse(foundTaskInstance -> {
@@ -62,6 +71,23 @@ public class TaskManager {
     }
 
     public void sendTaskInstanceEvent(UUID taskInstanceId, TaskInstanceEvent taskInstanceEvent, TaskInstanceStatus targetStatusEnum ){
+        Lock lock = new ReentrantLock();
+        lock.lock();
+        try {
+            Set<TaskInstanceEvent> sentTaskEvents = SENT_TASK_EVENTS.get(taskInstanceId);
+            if (sentTaskEvents != null && sentTaskEvents.contains(taskInstanceEvent)) {
+                log.debug("Event {} already sent for Task Instance {} ", taskInstanceEvent, taskInstanceId);
+                return;
+            }
+            if (sentTaskEvents == null)
+                sentTaskEvents = new HashSet<TaskInstanceEvent>();
+
+            sentTaskEvents.add(taskInstanceEvent);
+            SENT_TASK_EVENTS.put(taskInstanceId, sentTaskEvents);
+        } finally {
+            lock.unlock();
+            log.debug("Lock is released");
+        }
         Optional<TaskInstance> optionalTaskInstance = taskInstanceRepository.findById(taskInstanceId);
         optionalTaskInstance.ifPresentOrElse(taskInstance -> {
             StateMachine<TaskInstanceStatus, TaskInstanceEvent> stateMachine = build(taskInstance);
@@ -74,6 +100,7 @@ public class TaskManager {
                 awaitForStatus(UUID.fromString(taskInstance.getArangoKey()), targetStatusEnum);
             if(stateMachine.hasStateMachineError()){
                 sendTaskInstanceEvent(UUID.fromString(taskInstance.getArangoKey()), TaskInstanceEvent.ERROR_OCCURRED, TaskInstanceStatus.FAILED);
+                processManager.sendProcessInstanceEvent(UUID.fromString(taskInstance.getProcessInstance().getArangoKey()), ProcessInstanceEvent.ERROR_OCCURRED, ProcessInstanceStatus.FAILED);
             }
         },() -> {
             log.error("Error while sending event");

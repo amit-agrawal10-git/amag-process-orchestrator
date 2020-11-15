@@ -5,16 +5,14 @@ import com.github.amag.processorchestrator.domain.enums.TaskInstanceStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.task.TaskExecutor;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.statemachine.action.Action;
 import org.springframework.statemachine.config.EnableStateMachineFactory;
 import org.springframework.statemachine.config.StateMachineConfigurerAdapter;
 import org.springframework.statemachine.config.builders.StateMachineConfigurationConfigurer;
-import org.springframework.statemachine.config.builders.StateMachineModelConfigurer;
 import org.springframework.statemachine.config.builders.StateMachineStateConfigurer;
 import org.springframework.statemachine.config.builders.StateMachineTransitionConfigurer;
 import org.springframework.statemachine.guard.Guard;
+import org.springframework.statemachine.listener.StateMachineListenerAdapter;
 
 import java.util.EnumSet;
 
@@ -26,6 +24,7 @@ public class TaskInstanceStateMachineConfig extends StateMachineConfigurerAdapte
 
     public static final String TASK_INSTANCE_ID_HEADER = "taskInstanceId";
     private final Action<TaskInstanceStatus, TaskInstanceEvent> startTaskAction;
+    private final StateMachineListenerAdapter<TaskInstanceStatus, TaskInstanceEvent> taskInstanceListener;
 
     @Override
     public void configure(StateMachineStateConfigurer<TaskInstanceStatus, TaskInstanceEvent> states) throws Exception {
@@ -99,4 +98,9 @@ public class TaskInstanceStateMachineConfig extends StateMachineConfigurerAdapte
         };
     }
 
+    @Override
+    public void configure(StateMachineConfigurationConfigurer<TaskInstanceStatus, TaskInstanceEvent> config) throws Exception {
+       config.withConfiguration()
+               .listener(taskInstanceListener);
+    }
 }

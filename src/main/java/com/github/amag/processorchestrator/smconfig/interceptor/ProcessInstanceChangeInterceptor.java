@@ -1,10 +1,12 @@
-package com.github.amag.processorchestrator.interceptor;
+package com.github.amag.processorchestrator.smconfig.interceptor;
 
 import com.arangodb.springframework.core.ArangoOperations;
 import com.github.amag.processorchestrator.domain.ErrorLog;
 import com.github.amag.processorchestrator.domain.ProcessInstance;
 import com.github.amag.processorchestrator.domain.TransitionLog;
-import com.github.amag.processorchestrator.domain.enums.*;
+import com.github.amag.processorchestrator.domain.enums.EntityType;
+import com.github.amag.processorchestrator.domain.enums.ProcessInstanceEvent;
+import com.github.amag.processorchestrator.domain.enums.ProcessInstanceStatus;
 import com.github.amag.processorchestrator.smconfig.ProcessInstanceStateMachineConfig;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -60,7 +62,7 @@ public class ProcessInstanceChangeInterceptor extends StateMachineInterceptorAda
         PrintWriter pw = new PrintWriter(sw);
         exception.printStackTrace(pw);
         ErrorLog errorLog = ErrorLog.builder()
-                .entityId(stateMachine.getUuid())
+                .entityId(stateMachine.getUuid())  //todo to double check if UUID is instanceId
                 .entityType(EntityType.PROCESS_INSTANCE)
                 .stackTrace(sw.toString())
                 .build();

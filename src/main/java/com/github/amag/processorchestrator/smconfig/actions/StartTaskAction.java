@@ -4,7 +4,6 @@ import com.github.amag.processorchestrator.domain.TaskInstance;
 import com.github.amag.processorchestrator.domain.enums.TaskInstanceEvent;
 import com.github.amag.processorchestrator.domain.enums.TaskInstanceStatus;
 import com.github.amag.processorchestrator.repositories.TaskInstanceRepository;
-import com.github.amag.processorchestrator.services.TaskManager;
 import com.github.amag.processorchestrator.smconfig.TaskInstanceStateMachineConfig;
 import com.github.amag.processorchestrator.task.executor.SimpleActionExecutor;
 import com.github.amag.processorchestrator.task.types.SimpleAction;
@@ -15,7 +14,6 @@ import org.springframework.statemachine.action.Action;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.Optional;
 import java.util.UUID;
 

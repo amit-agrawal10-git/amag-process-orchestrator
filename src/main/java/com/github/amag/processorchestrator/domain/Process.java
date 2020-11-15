@@ -2,7 +2,9 @@ package com.github.amag.processorchestrator.domain;
 
 
 import com.arangodb.entity.KeyType;
-import com.arangodb.springframework.annotation.*;
+import com.arangodb.springframework.annotation.Document;
+import com.arangodb.springframework.annotation.HashIndex;
+import com.arangodb.springframework.annotation.Ref;
 import com.github.amag.processorchestrator.domain.enums.ProcessStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
