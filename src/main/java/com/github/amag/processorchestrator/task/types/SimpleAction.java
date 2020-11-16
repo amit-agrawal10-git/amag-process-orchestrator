@@ -4,8 +4,12 @@ import com.arangodb.springframework.core.ArangoOperations;
 
 import java.util.UUID;
 
-public interface SimpleAction extends BaseAction {
+public abstract class SimpleAction implements BaseAction {
 
-    public Object execute(UUID taskInstanceId, ArangoOperations arangoOperations);
+    public abstract Object execute(UUID taskInstanceId, ArangoOperations arangoOperations);
 
+    @Override
+    public void updateManagedBeanProperties(BaseAction managedBean) {
+
+    }
 }

@@ -23,8 +23,6 @@ public class SimpleActionExecutor {
     public void execute(SimpleAction simpleAction, UUID taskInstanceId) {
         Optional<TaskInstance> optionalTaskInstance = arangoOperations.find(taskInstanceId, TaskInstance.class);
         optionalTaskInstance.ifPresentOrElse(taskInstance -> {
-
-           // todo fix the issue with prototype beans
             SimpleAction managedActionBean = null;
             try{
                 managedActionBean = applicationContext.getBean(simpleAction.getClass());
@@ -33,6 +31,7 @@ public class SimpleActionExecutor {
             }
 
             if(managedActionBean != null){
+                simpleAction.updateManagedBeanProperties(managedActionBean);
                 Object output =  managedActionBean.execute(UUID.fromString(taskInstance.getArangoKey()),arangoOperations);
                 taskInstance.setOutput(output);
                 arangoOperations.repsert(taskInstance);

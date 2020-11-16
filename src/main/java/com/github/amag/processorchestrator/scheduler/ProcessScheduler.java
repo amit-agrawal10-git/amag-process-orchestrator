@@ -14,7 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class ProcessScheduler {
 
     private final ProcessManager processManager;
-    @Value("${amag.process.job.start.limit:4}")
+    @Value("${amag.process.job.start.limit:5}")
     private int maximumActiveProcess;
 
     @Scheduled(fixedDelayString = "${amag.process.job.instantiate.delay:5000}")

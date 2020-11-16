@@ -5,7 +5,6 @@ import com.github.amag.processorchestrator.criteria.Criteria;
 import com.github.amag.processorchestrator.domain.ProcessInstance;
 import com.github.amag.processorchestrator.domain.enums.ProcessInstanceEvent;
 import com.github.amag.processorchestrator.domain.enums.ProcessInstanceStatus;
-import com.github.amag.processorchestrator.services.ProcessManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Configuration;
@@ -18,10 +17,7 @@ import org.springframework.statemachine.guard.Guard;
 
 import java.util.EnumSet;
 import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 @Configuration
 @EnableStateMachineFactory(name = "processInstanceStateMachineFactory")
@@ -97,19 +93,6 @@ public class ProcessInstanceStateMachineConfig extends StateMachineConfigurerAda
                 Criteria<ProcessInstance> processInstanceCriteria = processInstance.getExecutionCriteria();
                 if(processInstanceCriteria!=null)
                 output = processInstanceCriteria.evaluate(processInstance, arangoOperations).isCriteriaResult();
-            }
-            if (!output){
-                Lock lock = new ReentrantLock();
-                lock.lock();
-                try {
-                   UUID instanceId = UUID.fromString((String) stateContext.getMessageHeader(PROCESS_INSTANCE_ID_HEADER));
-                   Set<ProcessInstanceEvent> processInstanceEvents = ProcessManager.SENT_PROCESS_EVENTS.get(instanceId);
-                   processInstanceEvents.remove(stateContext.getEvent());
-                   ProcessManager.SENT_PROCESS_EVENTS.put(instanceId,processInstanceEvents);
-                } finally {
-                    lock.unlock();
-                }
-
             }
             return output;
         };

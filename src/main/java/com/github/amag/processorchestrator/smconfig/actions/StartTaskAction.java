@@ -1,5 +1,6 @@
 package com.github.amag.processorchestrator.smconfig.actions;
 
+import com.arangodb.springframework.core.ArangoOperations;
 import com.github.amag.processorchestrator.domain.TaskInstance;
 import com.github.amag.processorchestrator.domain.enums.TaskInstanceEvent;
 import com.github.amag.processorchestrator.domain.enums.TaskInstanceStatus;
@@ -22,7 +23,7 @@ import java.util.UUID;
 @Component
 public class StartTaskAction implements Action<TaskInstanceStatus, TaskInstanceEvent> {
 
-    private final TaskInstanceRepository taskInstanceRepository;
+    private final ArangoOperations arangoOperations;
     private final SimpleActionExecutor simpleActionExecutor;
 
     @Override
@@ -30,7 +31,7 @@ public class StartTaskAction implements Action<TaskInstanceStatus, TaskInstanceE
     public void execute(StateContext<TaskInstanceStatus, TaskInstanceEvent> stateContext) {
         log.debug("start task instance was called");
         UUID taskInstanceId = UUID.fromString(stateContext.getMessageHeader(TaskInstanceStateMachineConfig.TASK_INSTANCE_ID_HEADER).toString());
-        Optional<TaskInstance> optionalTaskInstance = taskInstanceRepository.findById(taskInstanceId);
+        Optional<TaskInstance> optionalTaskInstance = arangoOperations.find(taskInstanceId,TaskInstance.class);
 
         optionalTaskInstance.ifPresentOrElse(taskInstance -> {
             Object object = taskInstance.getTaskTemplate().getBaseAction();

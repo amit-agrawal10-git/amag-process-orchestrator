@@ -12,23 +12,12 @@ import com.github.amag.processorchestrator.domain.enums.TaskInstanceStatus;
 import com.github.amag.processorchestrator.repositories.ProcessInstanceRepository;
 import com.github.amag.processorchestrator.repositories.ProcessRepository;
 import com.github.amag.processorchestrator.repositories.TaskInstanceRepository;
-import com.github.amag.processorchestrator.smconfig.ProcessInstanceStateMachineConfig;
-import com.github.amag.processorchestrator.smconfig.interceptor.ProcessInstanceChangeInterceptor;
+import com.github.amag.processorchestrator.smconfig.events.ProcessEventSender;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.messaging.Message;
-import org.springframework.messaging.support.MessageBuilder;
-import org.springframework.scheduling.annotation.Async;
-import org.springframework.statemachine.StateMachine;
-import org.springframework.statemachine.config.StateMachineFactory;
-import org.springframework.statemachine.support.DefaultStateMachineContext;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 @RequiredArgsConstructor
 @Service
@@ -38,12 +27,8 @@ public class ProcessManager {
     private final ProcessRepository processRepository;
     private final ProcessInstanceRepository processInstanceRepository;
     private final TaskInstanceRepository taskInstanceRepository;
+    private final ProcessEventSender processEventSender;
     private final ArangoOperations arangoOperations;
-    private final StateMachineFactory<ProcessInstanceStatus, ProcessInstanceEvent> processInstanceStateMachineFactory;
-    private final ProcessInstanceChangeInterceptor processInstanceChangeInterceptor;
-
-    // todo add complete action to clean up old records from map
-    public static Map<UUID, Set<ProcessInstanceEvent>> SENT_PROCESS_EVENTS = new HashMap<UUID, Set<ProcessInstanceEvent>>();
 
     public void instantiateJob() {
 
@@ -90,10 +75,9 @@ public class ProcessManager {
                         tempInstances.forEach(x -> {
                             x.from.getDependsOn().add(x.to);
                         });
-                        ProcessInstance savedProcessInstance = processInstanceRepository.save(processInstance);
-                        log.debug("Process Date {} saved process instance id {}",date, savedProcessInstance.getArangoId());
+                        arangoOperations.repsert(processInstance);
                         for (int i = newTaskInstances.size() - 1; i >= 0; i--)
-                            taskInstanceRepository.save(newTaskInstances.get(i));
+                            arangoOperations.repsert(newTaskInstances.get(i));
                         process.setExecutedUpto(date);
                         processRepository.save(process);
                     }
@@ -118,7 +102,7 @@ public class ProcessManager {
         if (taskInstances != null) {
             taskInstances.stream().forEach(x ->
             {
-                x.setTaskTemplate(taskInstanceRepository.findById(UUID.fromString(x.getArangoKey())).get());
+                x.setTaskTemplate(arangoOperations.find(UUID.fromString(x.getArangoKey()),TaskInstance.class).get());
                 x.setArangoId(null);
                 x.setArangoKey(null);
                 x.setTemplate(false);
@@ -151,126 +135,35 @@ public class ProcessManager {
         instance2TaskInstances.add(taskInstance2TaskInstance);
     }
 
-    @Async
     public void findAndMarkReady() {
-        Optional<ProcessInstance> optionalProcessInstance = processInstanceRepository.findByStatusAndIsTemplate(ProcessInstanceStatus.PENDING);
+        Optional<ProcessInstance> optionalProcessInstance = processInstanceRepository.findByStatusAndIsTemplate(ProcessInstanceStatus.PENDING,ProcessInstanceEvent.DEPENDENCY_RESOLVED);
         optionalProcessInstance.ifPresentOrElse(foundProcessInstance -> {
-            sendProcessInstanceEvent(UUID.fromString(foundProcessInstance.getArangoKey()),ProcessInstanceEvent.DEPENDENCY_RESOLVED, null);
+            processEventSender.sendProcessInstanceEvent(UUID.fromString(foundProcessInstance.getArangoKey()),ProcessInstanceEvent.DEPENDENCY_RESOLVED);
         }, ()-> log.debug("No pending process instance found"));
     }
 
-    @Async
     public void startProcess(final int maximumActiveProcess) {
         long activeCount = processInstanceRepository.countByStatus(ProcessInstanceStatus.INPROGRESS);
         if (activeCount < maximumActiveProcess) {
-            Optional<ProcessInstance> optionalProcessInstance = processInstanceRepository.findByStatusAndIsTemplate(ProcessInstanceStatus.READY);
+            Optional<ProcessInstance> optionalProcessInstance = processInstanceRepository.findByStatusAndIsTemplate(ProcessInstanceStatus.READY,ProcessInstanceEvent.PICKEDUP);
             optionalProcessInstance.ifPresentOrElse(foundProcessInstance -> {
-                sendProcessInstanceEvent(UUID.fromString(foundProcessInstance.getArangoKey()),ProcessInstanceEvent.PICKEDUP, null);
+                processEventSender.sendProcessInstanceEvent(UUID.fromString(foundProcessInstance.getArangoKey()),ProcessInstanceEvent.PICKEDUP);
             }, ()-> log.debug("No ready process instance found"));
         } else {
             log.debug("Maximum number of process are already running");
         }
     }
 
-    @Async
     public void completeProcess(){
-        Optional<ProcessInstance> optionalProcessInstance = processInstanceRepository.findCompletedProcessInstance(TaskInstanceStatus.COMPLETED, ProcessInstanceStatus.COMPLETED);
+        Optional<ProcessInstance> optionalProcessInstance = processInstanceRepository.findCompletedProcessInstance(TaskInstanceStatus.COMPLETED, ProcessInstanceStatus.COMPLETED,ProcessInstanceEvent.FINISHED);
         optionalProcessInstance.ifPresentOrElse(foundProcessInstance -> {
-            sendProcessInstanceEvent(UUID.fromString(foundProcessInstance.getArangoKey()),ProcessInstanceEvent.FINISHED, null);
-            SENT_PROCESS_EVENTS.remove(UUID.fromString(foundProcessInstance.getArangoKey()));
+            processEventSender.sendProcessInstanceEvent(UUID.fromString(foundProcessInstance.getArangoKey()),ProcessInstanceEvent.FINISHED);
             }, ()-> log.debug("No process instance found to be completed"));
     }
 
     private class TaskInstance2TaskInstance
     {
         public TaskInstance from, to;
-    }
-
-    public void sendProcessInstanceEvent(UUID instanceId, ProcessInstanceEvent processInstanceEvent, ProcessInstanceStatus targetStatusEnum ){
-        Lock lock = new ReentrantLock();
-        lock.lock();
-        try {
-            Set<ProcessInstanceEvent> sentProcessEvents = SENT_PROCESS_EVENTS.get(instanceId);
-            if (sentProcessEvents != null && sentProcessEvents.contains(processInstanceEvent)) {
-                log.debug("Event {} already sent for Task Instance {} ", processInstanceEvent, instanceId);
-                return;
-            }
-            if (sentProcessEvents == null)
-                sentProcessEvents = new HashSet<ProcessInstanceEvent>();
-
-            sentProcessEvents.add(processInstanceEvent);
-            SENT_PROCESS_EVENTS.put(instanceId, sentProcessEvents);
-        } finally {
-            lock.unlock();
-            log.debug("Lock is released");
-        }
-
-        Optional<ProcessInstance> optionalProcessInstance = processInstanceRepository.findById(instanceId);
-        optionalProcessInstance.ifPresentOrElse(processInstance -> {
-            StateMachine<ProcessInstanceStatus, ProcessInstanceEvent> stateMachine = build(processInstance);
-            Message message
-                    = MessageBuilder.withPayload(processInstanceEvent)
-                    .setHeader(ProcessInstanceStateMachineConfig.PROCESS_INSTANCE_ID_HEADER,processInstance.getArangoKey())
-                    .build();
-            stateMachine.sendEvent(message);
-            if(targetStatusEnum!= null)
-              awaitForStatus(UUID.fromString(processInstance.getArangoKey()), targetStatusEnum);
-            if(stateMachine.hasStateMachineError()){
-                sendProcessInstanceEvent(UUID.fromString(processInstance.getArangoKey()), ProcessInstanceEvent.ERROR_OCCURRED, ProcessInstanceStatus.FAILED);
-            }
-        },() -> {
-            log.error("Error while sending event");
-        });
-    }
-
-    private void awaitForStatus(UUID instanceId, ProcessInstanceStatus statusEnum) {
-
-        AtomicBoolean found = new AtomicBoolean(false);
-        AtomicInteger loopCount = new AtomicInteger(0);
-
-        while (!found.get()) {
-            if (loopCount.incrementAndGet() > 10) {
-                found.set(true);
-                log.debug("Loop Retries exceeded");
-            }
-
-            processInstanceRepository.findById(instanceId).ifPresentOrElse(processInstance -> {
-                if (statusEnum.equals(processInstance.getStatus())) {
-                    found.set(true);
-                    log.debug("Instance Found");
-                } else {
-                    log.debug("Instance Status Not Equal. Expected: " + statusEnum.name() + " Found: " + processInstance.getStatus().name());
-                }
-            }, () -> {
-                log.debug("Instance Id Not Found");
-            });
-
-            if (!found.get()) {
-                try {
-                    log.debug("Sleeping for retry");
-                    Thread.sleep(100);
-                } catch (Exception e) {
-                    // do nothing
-                }
-            }
-        }
-
-    }
-
-
-    private StateMachine<ProcessInstanceStatus, ProcessInstanceEvent> build(ProcessInstance processInstance){
-        StateMachine<ProcessInstanceStatus, ProcessInstanceEvent> stateMachine = processInstanceStateMachineFactory.getStateMachine(UUID.fromString(processInstance.getArangoKey()));
-        stateMachine.stop();
-
-        stateMachine.getStateMachineAccessor()
-                .doWithAllRegions(
-                        sma -> {
-                            sma.addStateMachineInterceptor(processInstanceChangeInterceptor);
-                            sma.resetStateMachine(new DefaultStateMachineContext<>(processInstance.getStatus(), null,null,null));
-                        }
-                );
-        stateMachine.start();
-        return stateMachine;
     }
 
 }

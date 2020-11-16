@@ -5,13 +5,17 @@ import com.arangodb.entity.KeyType;
 import com.arangodb.springframework.annotation.Document;
 import com.arangodb.springframework.annotation.Ref;
 import com.github.amag.processorchestrator.criteria.Criteria;
+import com.github.amag.processorchestrator.domain.enums.ProcessInstanceEvent;
 import com.github.amag.processorchestrator.domain.enums.ProcessInstanceStatus;
+import com.github.amag.processorchestrator.domain.enums.TaskInstanceEvent;
+import com.github.amag.processorchestrator.domain.enums.TaskInstanceStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.Date;
+import java.util.Set;
 
 @Document(value = "process_instances", keyType = KeyType.uuid, allowUserKeys = true)
 @Data
@@ -34,6 +38,8 @@ public class ProcessInstance extends BaseObject {
     private Criteria<ProcessInstance> instantiationCriteria;
 
     private Criteria<ProcessInstance> executionCriteria;
+
+    private Set<ProcessInstanceEvent> sentEvents;
 
 }
 

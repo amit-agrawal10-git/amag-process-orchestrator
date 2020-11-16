@@ -62,7 +62,7 @@ public class ProcessInstanceChangeInterceptor extends StateMachineInterceptorAda
         PrintWriter pw = new PrintWriter(sw);
         exception.printStackTrace(pw);
         ErrorLog errorLog = ErrorLog.builder()
-                .entityId(stateMachine.getUuid())  //todo to double check if UUID is instanceId
+                .entityId(stateMachine.getUuid())
                 .entityType(EntityType.PROCESS_INSTANCE)
                 .stackTrace(sw.toString())
                 .build();

@@ -56,16 +56,6 @@ public class TaskInstanceStateMachineConfig extends StateMachineConfigurerAdapte
                     .guard(instanceIdGuard())
 
                 .and().withExternal()
-                    .source(TaskInstanceStatus.STARTED)
-                    .target(TaskInstanceStatus.WAITING)
-                    .event(TaskInstanceEvent.EVENT_SENT)
-
-                .and().withExternal()
-                    .source(TaskInstanceStatus.WAITING)
-                    .target(TaskInstanceStatus.CALLEDBACK)
-                    .event(TaskInstanceEvent.EVENT_RECEIVED)
-
-                .and().withExternal()
                     .source(TaskInstanceStatus.CALLEDBACK)
                     .target(TaskInstanceStatus.COMPLETED)
                     .event(TaskInstanceEvent.FINISHED)

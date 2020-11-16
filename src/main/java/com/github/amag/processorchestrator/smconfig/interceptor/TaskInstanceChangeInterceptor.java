@@ -7,7 +7,6 @@ import com.github.amag.processorchestrator.domain.TransitionLog;
 import com.github.amag.processorchestrator.domain.enums.EntityType;
 import com.github.amag.processorchestrator.domain.enums.TaskInstanceEvent;
 import com.github.amag.processorchestrator.domain.enums.TaskInstanceStatus;
-import com.github.amag.processorchestrator.repositories.TaskInstanceRepository;
 import com.github.amag.processorchestrator.smconfig.TaskInstanceStateMachineConfig;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,7 +28,6 @@ import java.util.UUID;
 @Slf4j
 public class TaskInstanceChangeInterceptor extends StateMachineInterceptorAdapter<TaskInstanceStatus, TaskInstanceEvent> {
 
-    private final TaskInstanceRepository taskInstanceRepository;
     private final ArangoOperations arangoOperations;
 
     @Override
@@ -39,7 +37,7 @@ public class TaskInstanceChangeInterceptor extends StateMachineInterceptorAdapte
                 .flatMap(msg -> Optional.ofNullable((String) msg.getHeaders().getOrDefault(TaskInstanceStateMachineConfig.TASK_INSTANCE_ID_HEADER, " ")))
                 .ifPresent(taskInstanceId -> {
                         log.debug("Saving state for order id: "+taskInstanceId+" Status: "+state.getId());
-                            TaskInstance taskInstance = taskInstanceRepository.findById(UUID.fromString(taskInstanceId)).get();
+                            TaskInstance taskInstance = arangoOperations.find(UUID.fromString(taskInstanceId), TaskInstance.class).get();
                             TransitionLog transitionLog = TransitionLog.builder()
                                     .entityType(EntityType.TASK_INSTANCE)
                                     .entityId(stateMachine.getUuid())
@@ -48,7 +46,7 @@ public class TaskInstanceChangeInterceptor extends StateMachineInterceptorAdapte
                                     .build();
                             arangoOperations.insert(transitionLog);
                             taskInstance.setStatus(state.getId());
-                        taskInstanceRepository.save(taskInstance);
+                        arangoOperations.repsert(taskInstance);
                 }
                 );
     }
