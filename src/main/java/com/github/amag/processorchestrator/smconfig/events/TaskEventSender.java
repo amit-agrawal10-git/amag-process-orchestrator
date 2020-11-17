@@ -3,12 +3,8 @@ package com.github.amag.processorchestrator.smconfig.events;
 import com.arangodb.springframework.core.ArangoOperations;
 import com.github.amag.processorchestrator.domain.TaskInstance;
 import com.github.amag.processorchestrator.domain.enums.ProcessInstanceEvent;
-import com.github.amag.processorchestrator.domain.enums.ProcessInstanceStatus;
 import com.github.amag.processorchestrator.domain.enums.TaskInstanceEvent;
 import com.github.amag.processorchestrator.domain.enums.TaskInstanceStatus;
-import com.github.amag.processorchestrator.repositories.TaskInstanceRepository;
-import com.github.amag.processorchestrator.services.ProcessManager;
-import com.github.amag.processorchestrator.services.TaskManager;
 import com.github.amag.processorchestrator.smconfig.TaskInstanceStateMachineConfig;
 import com.github.amag.processorchestrator.smconfig.interceptor.TaskInstanceChangeInterceptor;
 import lombok.RequiredArgsConstructor;
@@ -21,11 +17,8 @@ import org.springframework.statemachine.config.StateMachineFactory;
 import org.springframework.statemachine.support.DefaultStateMachineContext;
 import org.springframework.stereotype.Component;
 
-import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.Optional;
+import java.util.UUID;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -37,7 +30,7 @@ public class TaskEventSender {
     private final TaskInstanceChangeInterceptor taskInstanceChangeInterceptor;
     private final ProcessEventSender processEventSender;
 
-    @Async(value = "taskInstExecutor")
+    @Async(value = "taskInstEx")
     public void sendTaskInstanceEvent(UUID taskInstanceId, TaskInstanceEvent taskInstanceEvent){
         Optional<TaskInstance> optionalTaskInstance = arangoOperations.find(taskInstanceId, TaskInstance.class);
         optionalTaskInstance.ifPresentOrElse(taskInstance -> {

@@ -4,7 +4,6 @@ import com.arangodb.springframework.core.ArangoOperations;
 import com.github.amag.processorchestrator.domain.ProcessInstance;
 import com.github.amag.processorchestrator.domain.enums.ProcessInstanceEvent;
 import com.github.amag.processorchestrator.domain.enums.ProcessInstanceStatus;
-import com.github.amag.processorchestrator.repositories.ProcessInstanceRepository;
 import com.github.amag.processorchestrator.smconfig.ProcessInstanceStateMachineConfig;
 import com.github.amag.processorchestrator.smconfig.interceptor.ProcessInstanceChangeInterceptor;
 import lombok.RequiredArgsConstructor;
@@ -17,7 +16,8 @@ import org.springframework.statemachine.config.StateMachineFactory;
 import org.springframework.statemachine.support.DefaultStateMachineContext;
 import org.springframework.stereotype.Component;
 
-import java.util.*;
+import java.util.Optional;
+import java.util.UUID;
 
 @RequiredArgsConstructor
 @Component
@@ -29,7 +29,7 @@ public class ProcessEventSender {
     private final ProcessInstanceChangeInterceptor processInstanceChangeInterceptor;
 
 
-    @Async(value = "processInstExecutor")
+    @Async(value = "procInstEx")
     public void sendProcessInstanceEvent(UUID instanceId, ProcessInstanceEvent processInstanceEvent){
 
         Optional<ProcessInstance> optionalProcessInstance = arangoOperations.find(instanceId,ProcessInstance.class);

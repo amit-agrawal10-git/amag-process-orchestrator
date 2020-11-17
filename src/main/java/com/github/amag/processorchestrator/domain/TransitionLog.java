@@ -20,8 +20,7 @@ public class TransitionLog extends BaseObject {
 
     private EntityType entityType;
     private UUID entityId;
-    private String fromState;
-    private String toState;
+    private String fromState,toState, threadName;
 }
 
 

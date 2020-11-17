@@ -65,7 +65,7 @@ public class TaskInstanceRepository {
                 "     FILTER t.dependsOn ALL IN (FOR X IN task_instances FILTER X.processInstance == t.processInstance \n" +
                 "     FILTER X.status == @taskDependsOnStatus \n" +
                 "     return X._id) OR t.dependsOn == NULL\n" +
-                "    limit 1 " +
+                "   sort t.processInstance limit 1 " +
                 " update t with { \"sentEvents\": PUSH(t.sentEvents, @taskEvent) } in task_instances RETURN NEW";
 
         final Map<String,Object> bindVariables = new MapBuilder()
@@ -87,7 +87,7 @@ public class TaskInstanceRepository {
                 " filter i.status == @status " +
                 " filter i.isTemplate == false " +
                 " filter @taskEvent not in i.sentEvents OR i.sentEvents == NULL " +
-                " limit 1 " +
+                " sort i.processInstance limit 1 " +
                 " update i with { \"sentEvents\": PUSH(i.sentEvents, @taskEvent) } in task_instances  RETURN NEW \n";
 
         final Map<String,Object> bindVariables = new MapBuilder()
@@ -100,18 +100,5 @@ public class TaskInstanceRepository {
                 (taskInstances.hasNext())?Optional.of(taskInstances.next()):Optional.empty();
 
     };
-
-    public long countByStatus(TaskInstanceStatus taskInstanceStatus){
-        final String query = " for r in task_instances " +
-                " filter r.status == @status " +
-                " return r ";
-
-        final Map<String,Object> bindVariables = new MapBuilder()
-                .put("status", taskInstanceStatus)
-                .get();
-
-        ArangoCursor<TaskInstance> taskInstances = arangoOperations.query(query,bindVariables,new AqlQueryOptions().count(true),TaskInstance.class);
-        return taskInstances.count();
-    }
 
 }

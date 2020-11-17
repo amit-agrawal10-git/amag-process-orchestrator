@@ -13,12 +13,10 @@ import org.springframework.stereotype.Service;
 public class ProcessTaskScheduler {
 
     private final TaskManager taskManager;
-    @Value("${amag.task.job.start.limit:10}")
-    private int maximumActiveTask;
 
     @Scheduled(fixedRateString = "${amag.task.job.start.delay:500}")
     protected void startTask() {
-        taskManager.startTask(maximumActiveTask);
+        taskManager.startTask();
     }
 
     @Scheduled(fixedRateString = "${amag.task.job.ready.delay:500}")

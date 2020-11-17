@@ -42,10 +42,11 @@ public class ProcessInstanceChangeInterceptor extends StateMachineInterceptorAda
                         log.debug("Saving state for id: "+instanceId+" Status: "+state.getId());
                         final ProcessInstance instance = arangoOperations.find(UUID.fromString(instanceId),ProcessInstance.class).get();
                             TransitionLog transitionLog = TransitionLog.builder()
-                                    .entityType(EntityType.TASK_INSTANCE)
+                                    .entityType(EntityType.PROCESS_INSTANCE)
                                     .entityId(stateMachine.getUuid())
                                     .fromState(instance.getStatus().toString())
                                     .toState(state.getId().toString())
+                                    .threadName(Thread.currentThread().getName())
                                     .build();
                             arangoOperations.insert(transitionLog);
 
