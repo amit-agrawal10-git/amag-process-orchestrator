@@ -17,17 +17,17 @@ import org.springframework.statemachine.support.DefaultStateMachineContext;
 import org.springframework.stereotype.Component;
 
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 @RequiredArgsConstructor
 @Component
 @Slf4j
-public class ProcessEventSender {
+public class ProcessEventManager {
 
     private final ArangoOperations arangoOperations;
     private final StateMachineFactory<ProcessInstanceStatus, ProcessInstanceEvent> processInstanceStateMachineFactory;
     private final ProcessInstanceChangeInterceptor processInstanceChangeInterceptor;
-
 
     @Async(value = "procInstEx")
     public void sendProcessInstanceEvent(UUID instanceId, ProcessInstanceEvent processInstanceEvent){
@@ -47,6 +47,16 @@ public class ProcessEventSender {
 
         },() -> {
             log.error("Error while sending event");
+        });
+    }
+
+    public static void rollbackEvent(UUID instanceId, ProcessInstanceEvent processInstanceEvent, ArangoOperations arangoOperations){
+        Optional<ProcessInstance> optionalProcessInstance = arangoOperations.find(instanceId,ProcessInstance.class);
+        optionalProcessInstance.ifPresent(processInstance -> {
+            Set<ProcessInstanceEvent> processInstanceEvents = processInstance.getSentEvents();
+            processInstanceEvents.remove(processInstanceEvent);
+            processInstance.setSentEvents(processInstanceEvents);
+            arangoOperations.repsert(processInstance);
         });
     }
 

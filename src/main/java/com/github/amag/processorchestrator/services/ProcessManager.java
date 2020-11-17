@@ -12,7 +12,7 @@ import com.github.amag.processorchestrator.domain.enums.TaskInstanceStatus;
 import com.github.amag.processorchestrator.repositories.ProcessInstanceRepository;
 import com.github.amag.processorchestrator.repositories.ProcessRepository;
 import com.github.amag.processorchestrator.repositories.TaskInstanceRepository;
-import com.github.amag.processorchestrator.smconfig.events.ProcessEventSender;
+import com.github.amag.processorchestrator.smconfig.events.ProcessEventManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -27,7 +27,7 @@ public class ProcessManager {
     private final ProcessRepository processRepository;
     private final ProcessInstanceRepository processInstanceRepository;
     private final TaskInstanceRepository taskInstanceRepository;
-    private final ProcessEventSender processEventSender;
+    private final ProcessEventManager processEventManager;
     private final ArangoOperations arangoOperations;
 
     public void instantiateJob() {
@@ -138,7 +138,7 @@ public class ProcessManager {
     public void findAndMarkReady() {
         Optional<ProcessInstance> optionalProcessInstance = processInstanceRepository.findByStatusAndIsTemplate(ProcessInstanceStatus.PENDING,ProcessInstanceEvent.DEPENDENCY_RESOLVED);
         optionalProcessInstance.ifPresentOrElse(foundProcessInstance -> {
-            processEventSender.sendProcessInstanceEvent(UUID.fromString(foundProcessInstance.getArangoKey()),ProcessInstanceEvent.DEPENDENCY_RESOLVED);
+            processEventManager.sendProcessInstanceEvent(UUID.fromString(foundProcessInstance.getArangoKey()),ProcessInstanceEvent.DEPENDENCY_RESOLVED);
         }, ()-> log.debug("No pending process instance found"));
     }
 
@@ -147,7 +147,7 @@ public class ProcessManager {
         if (activeCount < maximumActiveProcess) {
             Optional<ProcessInstance> optionalProcessInstance = processInstanceRepository.findByStatusAndIsTemplate(ProcessInstanceStatus.READY,ProcessInstanceEvent.PICKEDUP);
             optionalProcessInstance.ifPresentOrElse(foundProcessInstance -> {
-                processEventSender.sendProcessInstanceEvent(UUID.fromString(foundProcessInstance.getArangoKey()),ProcessInstanceEvent.PICKEDUP);
+                processEventManager.sendProcessInstanceEvent(UUID.fromString(foundProcessInstance.getArangoKey()),ProcessInstanceEvent.PICKEDUP);
             }, ()-> log.debug("No ready process instance found"));
         } else {
             log.debug("Maximum number of process are already running");
@@ -157,7 +157,7 @@ public class ProcessManager {
     public void completeProcess(){
         Optional<ProcessInstance> optionalProcessInstance = processInstanceRepository.findCompletedProcessInstance(TaskInstanceStatus.COMPLETED, ProcessInstanceStatus.COMPLETED,ProcessInstanceEvent.FINISHED);
         optionalProcessInstance.ifPresentOrElse(foundProcessInstance -> {
-            processEventSender.sendProcessInstanceEvent(UUID.fromString(foundProcessInstance.getArangoKey()),ProcessInstanceEvent.FINISHED);
+            processEventManager.sendProcessInstanceEvent(UUID.fromString(foundProcessInstance.getArangoKey()),ProcessInstanceEvent.FINISHED);
             }, ()-> log.debug("No process instance found to be completed"));
     }
 

@@ -46,7 +46,6 @@ public class ProcessInstanceChangeInterceptor extends StateMachineInterceptorAda
                                     .entityId(stateMachine.getUuid())
                                     .fromState(instance.getStatus().toString())
                                     .toState(state.getId().toString())
-                                    .threadName(Thread.currentThread().getName())
                                     .build();
                             arangoOperations.insert(transitionLog);
 

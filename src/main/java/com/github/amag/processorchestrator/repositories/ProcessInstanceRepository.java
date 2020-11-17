@@ -31,7 +31,7 @@ public class ProcessInstanceRepository {
                 " filter i.status == @status " +
                 " FILTER @processEvent not in i.sentEvents OR i.sentEvents == NULL \n" +
                 " filter i.isTemplate == false " +
-                " limit 1 " +
+                " sort rand() limit 1 " +
                 " update i with { \"sentEvents\": PUSH(i.sentEvents, @processEvent) } in process_instances RETURN NEW";
         final Map<String,Object> bindVariables = new MapBuilder()
                 .put("status", processInstanceStatus)

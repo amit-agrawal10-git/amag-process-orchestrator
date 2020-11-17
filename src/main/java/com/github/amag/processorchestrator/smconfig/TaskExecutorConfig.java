@@ -18,22 +18,18 @@ public class TaskExecutorConfig {
     @Bean(name = "taskInstEx")
     TaskExecutor taskExecutor() {
         ThreadPoolTaskExecutor threadPoolTaskExecutor = new ThreadPoolTaskExecutor();
-        threadPoolTaskExecutor.setCorePoolSize(1);
-        threadPoolTaskExecutor.setMaxPoolSize(5);
-        threadPoolTaskExecutor.setQueueCapacity(3);
+        threadPoolTaskExecutor.setCorePoolSize(4);
         threadPoolTaskExecutor.setAllowCoreThreadTimeOut(true);
-        threadPoolTaskExecutor.setKeepAliveSeconds(120);
+        threadPoolTaskExecutor.setKeepAliveSeconds(30);
         return threadPoolTaskExecutor;
     }
 
     @Bean(name = "procInstEx")
     TaskExecutor processExecutor() {
         ThreadPoolTaskExecutor threadPoolTaskExecutor = new ThreadPoolTaskExecutor();
-        threadPoolTaskExecutor.setCorePoolSize(1);
-        threadPoolTaskExecutor.setQueueCapacity(2);
-        threadPoolTaskExecutor.setMaxPoolSize(3);
+        threadPoolTaskExecutor.setCorePoolSize(2);
         threadPoolTaskExecutor.setAllowCoreThreadTimeOut(true);
-        threadPoolTaskExecutor.setKeepAliveSeconds(120);
+        threadPoolTaskExecutor.setKeepAliveSeconds(30);
         return threadPoolTaskExecutor;
     }
 }

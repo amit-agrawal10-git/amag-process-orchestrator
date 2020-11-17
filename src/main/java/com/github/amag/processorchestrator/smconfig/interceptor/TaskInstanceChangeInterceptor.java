@@ -43,7 +43,6 @@ public class TaskInstanceChangeInterceptor extends StateMachineInterceptorAdapte
                                     .entityId(stateMachine.getUuid())
                                     .fromState(taskInstance.getStatus().toString())
                                     .toState(state.getId().toString())
-                                    .threadName(Thread.currentThread().getName())
                                     .build();
                             arangoOperations.insert(transitionLog);
                             taskInstance.setStatus(state.getId());

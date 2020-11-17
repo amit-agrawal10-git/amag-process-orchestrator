@@ -5,8 +5,10 @@ import com.github.amag.processorchestrator.criteria.Criteria;
 import com.github.amag.processorchestrator.domain.ProcessInstance;
 import com.github.amag.processorchestrator.domain.enums.ProcessInstanceEvent;
 import com.github.amag.processorchestrator.domain.enums.ProcessInstanceStatus;
+import com.github.amag.processorchestrator.smconfig.events.ProcessEventManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.statemachine.action.Action;
 import org.springframework.statemachine.config.EnableStateMachineFactory;
@@ -17,6 +19,7 @@ import org.springframework.statemachine.guard.Guard;
 
 import java.util.EnumSet;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 @Configuration
@@ -28,7 +31,6 @@ public class ProcessInstanceStateMachineConfig extends StateMachineConfigurerAda
     public static final String PROCESS_INSTANCE_ID_HEADER = "processInstanceId";
     private final ArangoOperations arangoOperations;
     private final Action<ProcessInstanceStatus, ProcessInstanceEvent> startProcessAction;
-
 
     @Override
     public void configure(StateMachineStateConfigurer<ProcessInstanceStatus, ProcessInstanceEvent> states) throws Exception {
@@ -93,7 +95,11 @@ public class ProcessInstanceStateMachineConfig extends StateMachineConfigurerAda
                 Criteria<ProcessInstance> processInstanceCriteria = processInstance.getExecutionCriteria();
                 if(processInstanceCriteria!=null)
                 output = processInstanceCriteria.evaluate(processInstance, arangoOperations).isCriteriaResult();
+                if(!output){
+                    ProcessEventManager.rollbackEvent(UUID.fromString(processInstance.getArangoKey()),ProcessInstanceEvent.PICKEDUP,arangoOperations);
+                }
             }
+
             return output;
         };
     }

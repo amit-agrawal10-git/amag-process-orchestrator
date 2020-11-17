@@ -23,12 +23,12 @@ import java.util.UUID;
 @Slf4j
 @RequiredArgsConstructor
 @Component
-public class TaskEventSender {
+public class TaskEventManager {
 
     private final ArangoOperations arangoOperations;
     private final StateMachineFactory<TaskInstanceStatus, TaskInstanceEvent> taskInstanceStateMachineFactory;
     private final TaskInstanceChangeInterceptor taskInstanceChangeInterceptor;
-    private final ProcessEventSender processEventSender;
+    private final ProcessEventManager processEventManager;
 
     @Async(value = "taskInstEx")
     public void sendTaskInstanceEvent(UUID taskInstanceId, TaskInstanceEvent taskInstanceEvent){
@@ -43,7 +43,7 @@ public class TaskEventSender {
 
             if(stateMachine.hasStateMachineError()){
                 sendTaskInstanceEvent(UUID.fromString(taskInstance.getArangoKey()), TaskInstanceEvent.ERROR_OCCURRED);
-                processEventSender.sendProcessInstanceEvent(UUID.fromString(taskInstance.getProcessInstance().getArangoKey()), ProcessInstanceEvent.ERROR_OCCURRED);
+                processEventManager.sendProcessInstanceEvent(UUID.fromString(taskInstance.getProcessInstance().getArangoKey()), ProcessInstanceEvent.ERROR_OCCURRED);
             }
         },() -> {
             log.error("Error while sending event");
