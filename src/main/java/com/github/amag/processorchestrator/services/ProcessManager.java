@@ -138,7 +138,14 @@ public class ProcessManager {
     public void findAndMarkReady() {
         Optional<ProcessInstance> optionalProcessInstance = processInstanceRepository.findByStatusAndIsTemplate(ProcessInstanceStatus.PENDING,ProcessInstanceEvent.DEPENDENCY_RESOLVED);
         optionalProcessInstance.ifPresentOrElse(foundProcessInstance -> {
-            processEventManager.sendProcessInstanceEvent(UUID.fromString(foundProcessInstance.getArangoKey()),ProcessInstanceEvent.DEPENDENCY_RESOLVED);
+            Criteria<ProcessInstance> processInstanceCriteria = foundProcessInstance.getExecutionCriteria();
+            boolean output = true;
+            if(processInstanceCriteria!=null)
+                output = processInstanceCriteria.evaluate(foundProcessInstance, arangoOperations).isCriteriaResult();
+            if (output)
+                processEventManager.sendProcessInstanceEvent(UUID.fromString(foundProcessInstance.getArangoKey()),ProcessInstanceEvent.DEPENDENCY_RESOLVED);
+            else
+                processEventManager.rollbackEvent(UUID.fromString(foundProcessInstance.getArangoKey()),ProcessInstanceEvent.DEPENDENCY_RESOLVED,arangoOperations);
         }, ()-> log.debug("No pending process instance found"));
     }
 

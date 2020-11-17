@@ -1,14 +1,10 @@
 package com.github.amag.processorchestrator.smconfig;
 
 import com.arangodb.springframework.core.ArangoOperations;
-import com.github.amag.processorchestrator.criteria.Criteria;
-import com.github.amag.processorchestrator.domain.ProcessInstance;
 import com.github.amag.processorchestrator.domain.enums.ProcessInstanceEvent;
 import com.github.amag.processorchestrator.domain.enums.ProcessInstanceStatus;
-import com.github.amag.processorchestrator.smconfig.events.ProcessEventManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.statemachine.action.Action;
 import org.springframework.statemachine.config.EnableStateMachineFactory;
@@ -18,9 +14,6 @@ import org.springframework.statemachine.config.builders.StateMachineTransitionCo
 import org.springframework.statemachine.guard.Guard;
 
 import java.util.EnumSet;
-import java.util.Optional;
-import java.util.Set;
-import java.util.UUID;
 
 @Configuration
 @EnableStateMachineFactory(name = "processInstanceStateMachineFactory")
@@ -48,6 +41,7 @@ public class ProcessInstanceStateMachineConfig extends StateMachineConfigurerAda
                 .source(ProcessInstanceStatus.PENDING)
                 .target(ProcessInstanceStatus.READY)
                 .event(ProcessInstanceEvent.DEPENDENCY_RESOLVED)
+                .guard(instanceIdGuard())
 
                 .and().withExternal()
                     .source(ProcessInstanceStatus.READY)
@@ -55,52 +49,36 @@ public class ProcessInstanceStateMachineConfig extends StateMachineConfigurerAda
                     .event(ProcessInstanceEvent.PICKEDUP)
                     .action(startProcessAction)
                     .guard(instanceIdGuard())
-                    .guard(executionConditionGuard())
 
                 .and().withExternal()
                     .source(ProcessInstanceStatus.INPROGRESS)
                     .target(ProcessInstanceStatus.COMPLETED)
                     .event(ProcessInstanceEvent.FINISHED)
+                    .guard(instanceIdGuard())
 
                 .and().withExternal()
                     .source(ProcessInstanceStatus.PENDING)
                     .target(ProcessInstanceStatus.FAILED)
                     .event(ProcessInstanceEvent.ERROR_OCCURRED)
+                    .guard(instanceIdGuard())
 
                 .and().withExternal()
                     .source(ProcessInstanceStatus.READY)
                     .target(ProcessInstanceStatus.FAILED)
                     .event(ProcessInstanceEvent.ERROR_OCCURRED)
+                    .guard(instanceIdGuard())
 
                 .and().withExternal()
                     .source(ProcessInstanceStatus.INPROGRESS)
                     .target(ProcessInstanceStatus.FAILED)
-                    .event(ProcessInstanceEvent.ERROR_OCCURRED);
+                    .event(ProcessInstanceEvent.ERROR_OCCURRED)
+                    .guard(instanceIdGuard());
 
     }
 
     public Guard<ProcessInstanceStatus, ProcessInstanceEvent> instanceIdGuard(){
         return stateContext -> {
           return stateContext.getMessageHeader(PROCESS_INSTANCE_ID_HEADER) != null;
-        };
-    }
-
-    public Guard<ProcessInstanceStatus, ProcessInstanceEvent> executionConditionGuard(){
-        return stateContext -> {
-            final Optional<ProcessInstance> optionalProcessInstance = arangoOperations.find(UUID.fromString((String)stateContext.getMessageHeader(PROCESS_INSTANCE_ID_HEADER)),ProcessInstance.class);
-            final ProcessInstance processInstance;
-            boolean output = true;
-            if(optionalProcessInstance.isPresent()){
-                processInstance = optionalProcessInstance.get();
-                Criteria<ProcessInstance> processInstanceCriteria = processInstance.getExecutionCriteria();
-                if(processInstanceCriteria!=null)
-                output = processInstanceCriteria.evaluate(processInstance, arangoOperations).isCriteriaResult();
-                if(!output){
-                    ProcessEventManager.rollbackEvent(UUID.fromString(processInstance.getArangoKey()),ProcessInstanceEvent.PICKEDUP,arangoOperations);
-                }
-            }
-
-            return output;
         };
     }
 

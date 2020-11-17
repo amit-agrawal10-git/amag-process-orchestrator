@@ -1,24 +1,18 @@
 package com.github.amag.processorchestrator.repositories;
 
 import com.arangodb.ArangoCursor;
-import com.arangodb.model.AqlQueryOptions;
-import com.arangodb.springframework.annotation.Query;
 import com.arangodb.springframework.core.ArangoOperations;
-import com.arangodb.springframework.repository.ArangoRepository;
 import com.arangodb.util.MapBuilder;
 import com.github.amag.processorchestrator.domain.TaskInstance;
 import com.github.amag.processorchestrator.domain.enums.ProcessInstanceStatus;
 import com.github.amag.processorchestrator.domain.enums.TaskInstanceEvent;
 import com.github.amag.processorchestrator.domain.enums.TaskInstanceStatus;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.annotation.Profile;
-import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.UUID;
 
 @RequiredArgsConstructor
 @Repository

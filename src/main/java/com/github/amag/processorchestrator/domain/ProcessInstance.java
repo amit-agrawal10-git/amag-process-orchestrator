@@ -7,8 +7,6 @@ import com.arangodb.springframework.annotation.Ref;
 import com.github.amag.processorchestrator.criteria.Criteria;
 import com.github.amag.processorchestrator.domain.enums.ProcessInstanceEvent;
 import com.github.amag.processorchestrator.domain.enums.ProcessInstanceStatus;
-import com.github.amag.processorchestrator.domain.enums.TaskInstanceEvent;
-import com.github.amag.processorchestrator.domain.enums.TaskInstanceStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
