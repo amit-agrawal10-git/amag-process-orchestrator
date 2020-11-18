@@ -18,7 +18,7 @@ public class TaskExecutorConfig {
     @Bean(name = "taskInstEx")
     TaskExecutor taskExecutor() {
         ThreadPoolTaskExecutor threadPoolTaskExecutor = new ThreadPoolTaskExecutor();
-        threadPoolTaskExecutor.setCorePoolSize(4);
+        threadPoolTaskExecutor.setCorePoolSize(3);
         threadPoolTaskExecutor.setAllowCoreThreadTimeOut(true);
         threadPoolTaskExecutor.setKeepAliveSeconds(30);
         return threadPoolTaskExecutor;

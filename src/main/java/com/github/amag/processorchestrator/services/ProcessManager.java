@@ -162,7 +162,7 @@ public class ProcessManager {
     }
 
     public void completeProcess(){
-        Optional<ProcessInstance> optionalProcessInstance = processInstanceRepository.findCompletedProcessInstance(TaskInstanceStatus.COMPLETED, ProcessInstanceStatus.COMPLETED,ProcessInstanceEvent.FINISHED);
+        Optional<ProcessInstance> optionalProcessInstance = processInstanceRepository.findCompletedProcessInstance(TaskInstanceStatus.COMPLETED, ProcessInstanceStatus.INPROGRESS,ProcessInstanceEvent.FINISHED);
         optionalProcessInstance.ifPresentOrElse(foundProcessInstance -> {
             processEventManager.sendProcessInstanceEvent(UUID.fromString(foundProcessInstance.getArangoKey()),ProcessInstanceEvent.FINISHED);
             }, ()-> log.debug("No process instance found to be completed"));

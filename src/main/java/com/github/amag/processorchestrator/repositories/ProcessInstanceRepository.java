@@ -44,7 +44,7 @@ public class ProcessInstanceRepository {
                                                                  ProcessInstanceEvent processInstanceEvent){
         final String query = "for p in process_instances \n" +
                 "   filter p.isTemplate == false \n" +
-                "   filter p.status != @currentProcessStatus\n" +
+                "   filter p.status == @currentProcessStatus\n" +
                 " FILTER @processEvent not in p.sentEvents OR p.sentEvents == NULL \n" +
                 "   filter (\n" +
                 "   for t in task_instances \n" +

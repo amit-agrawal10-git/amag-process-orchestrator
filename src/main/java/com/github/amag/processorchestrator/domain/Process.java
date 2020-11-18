@@ -18,7 +18,7 @@ import java.util.Date;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@HashIndex(fields = {"processTemplate"}, unique = true)
+@HashIndex(fields = {"processCode"}, unique = true)
 public class Process extends BaseObject {
 
     private Date from, executedUpto;
@@ -27,6 +27,8 @@ public class Process extends BaseObject {
     private ProcessInstance processTemplate;
 
     private ProcessStatus processStatus;
+
+    private String processCode;
 
 }
 

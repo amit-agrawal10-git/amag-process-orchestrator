@@ -31,7 +31,6 @@ public class ProcessEventManager {
 
     @Async(value = "procInstEx")
     public void sendProcessInstanceEvent(UUID instanceId, ProcessInstanceEvent processInstanceEvent){
-
         Optional<ProcessInstance> optionalProcessInstance = arangoOperations.find(instanceId,ProcessInstance.class);
         optionalProcessInstance.ifPresentOrElse(processInstance -> {
             StateMachine<ProcessInstanceStatus, ProcessInstanceEvent> stateMachine = build(processInstance);
