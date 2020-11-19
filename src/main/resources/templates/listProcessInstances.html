@@ -33,6 +33,7 @@
             <th th:text="#{process.instance.status}" />
             <th th:text="#{process.instance.events}" />
             <th th:text="#{process.instance.tasks}" />
+            <th th:text="Action" />
         </tr>
     </thead>
     <tbody>
@@ -47,14 +48,17 @@
             <td><a th:href="@{/api/v1/taskinstances(processInstanceId=${inst.arangoId})}"
                    th:text=click
                    ></a></td>
+            <td><a th:href="@{'/api/v1/processinstance/rollback/'+${inst.arangoKey}}"
+                   th:text=rollback
+            ></a></td>
         </tr>
     </tbody>
 </table>
 <div th:if="${processInstancePage.totalPages > 0}" class="pagination"
     th:each="pageNumber : ${pageNumbers}">
-    <a th:href="@{/api/v1/processinstances(size=${processInstancePage.size}, page=${pageNumber})}"
+    <a th:href="@{/api/v1/processinstances(size=${processInstancePage.size}, page=${pageNumber-1})}"
         th:text=${pageNumber}
-        th:class="${pageNumber==processInstancePage.number + 1} ? active"></a>
+        th:class="${pageNumber==processInstancePage.number} ? active"></a>
 </div>
 </body>
 </html>

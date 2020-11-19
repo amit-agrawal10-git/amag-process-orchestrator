@@ -14,7 +14,7 @@ import org.springframework.stereotype.Component;
 public class TaskInstanceListener extends StateMachineListenerAdapter<TaskInstanceStatus, TaskInstanceEvent> {
     @Override
     public void eventNotAccepted(Message<TaskInstanceEvent> event) {
-        log.debug("{} not accepted",event);
+        log.error("{} not accepted",event);
     }
 
 

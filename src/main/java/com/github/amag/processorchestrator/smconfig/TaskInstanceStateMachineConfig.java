@@ -24,16 +24,14 @@ public class TaskInstanceStateMachineConfig extends StateMachineConfigurerAdapte
 
     public static final String TASK_INSTANCE_ID_HEADER = "taskInstanceId";
     private final Action<TaskInstanceStatus, TaskInstanceEvent> startTaskAction;
+    private final Action<TaskInstanceStatus, TaskInstanceEvent> rollbackTaskAction;
     private final StateMachineListenerAdapter<TaskInstanceStatus, TaskInstanceEvent> taskInstanceListener;
 
     @Override
     public void configure(StateMachineStateConfigurer<TaskInstanceStatus, TaskInstanceEvent> states) throws Exception {
         states.withStates()
                 .initial(TaskInstanceStatus.PENDING)
-                .states(EnumSet.allOf(TaskInstanceStatus.class))
-                .end(TaskInstanceStatus.FAILED)
-                .end(TaskInstanceStatus.COMPLETED);
-
+                .states(EnumSet.allOf(TaskInstanceStatus.class));
     }
 
     @Override
@@ -42,11 +40,13 @@ public class TaskInstanceStateMachineConfig extends StateMachineConfigurerAdapte
                     .source(TaskInstanceStatus.PENDING)
                     .target(TaskInstanceStatus.READY)
                     .event(TaskInstanceEvent.DEPENDENCY_RESOLVED)
+                    .guard(instanceIdGuard())
 
                 .and().withExternal()
                     .source(TaskInstanceStatus.READY)
                     .target(TaskInstanceStatus.STARTED)
                     .event(TaskInstanceEvent.PICKEDUP)
+                    .guard(instanceIdGuard())
 
                 .and().withExternal()
                     .source(TaskInstanceStatus.STARTED)
@@ -59,26 +59,45 @@ public class TaskInstanceStateMachineConfig extends StateMachineConfigurerAdapte
                     .source(TaskInstanceStatus.CALLEDBACK)
                     .target(TaskInstanceStatus.COMPLETED)
                     .event(TaskInstanceEvent.FINISHED)
+                    .guard(instanceIdGuard())
 
                 .and().withExternal()
                     .source(TaskInstanceStatus.READY)
                     .target(TaskInstanceStatus.FAILED)
                     .event(TaskInstanceEvent.ERROR_OCCURRED)
+                .guard(instanceIdGuard())
 
                 .and().withExternal()
                     .source(TaskInstanceStatus.STARTED)
                     .target(TaskInstanceStatus.FAILED)
                     .event(TaskInstanceEvent.ERROR_OCCURRED)
+                .guard(instanceIdGuard())
 
                 .and().withExternal()
-                    .source(TaskInstanceStatus.WAITING)
-                    .target(TaskInstanceStatus.FAILED)
-                    .event(TaskInstanceEvent.ERROR_OCCURRED)
+                .source(TaskInstanceStatus.COMPLETED)
+                .target(TaskInstanceStatus.FAILED)
+                .event(TaskInstanceEvent.ERROR_OCCURRED)
+                .guard(instanceIdGuard())
 
                 .and().withExternal()
-                    .source(TaskInstanceStatus.CALLEDBACK)
-                    .target(TaskInstanceStatus.FAILED)
-                    .event(TaskInstanceEvent.ERROR_OCCURRED);
+                .source(TaskInstanceStatus.PENDING)
+                .target(TaskInstanceStatus.FAILED)
+                .event(TaskInstanceEvent.ERROR_OCCURRED)
+                .guard(instanceIdGuard())
+
+                .and().withExternal()
+                    .source(TaskInstanceStatus.COMPLETED)
+                    .target(TaskInstanceStatus.PENDING)
+                    .event(TaskInstanceEvent.ROLLED_BACK)
+                    .action(rollbackTaskAction)
+                    .guard(instanceIdGuard())
+
+                .and().withExternal()
+                    .source(TaskInstanceStatus.FAILED)
+                    .target(TaskInstanceStatus.PENDING)
+                    .event(TaskInstanceEvent.ROLLED_BACK)
+                    .action(rollbackTaskAction)
+                    .guard(instanceIdGuard());
 
     }
 

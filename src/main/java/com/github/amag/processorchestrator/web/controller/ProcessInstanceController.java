@@ -1,8 +1,12 @@
 package com.github.amag.processorchestrator.web.controller;
 
 import com.github.amag.processorchestrator.domain.ProcessInstance;
+import com.github.amag.processorchestrator.domain.TaskInstance;
+import com.github.amag.processorchestrator.domain.enums.ProcessInstanceEvent;
 import com.github.amag.processorchestrator.domain.enums.ProcessInstanceStatus;
+import com.github.amag.processorchestrator.domain.enums.TaskInstanceEvent;
 import com.github.amag.processorchestrator.repositories.ProcessInstanceRepository;
+import com.github.amag.processorchestrator.smconfig.events.ProcessEventManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -13,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -22,21 +27,17 @@ import java.util.stream.IntStream;
 public class ProcessInstanceController {
 
     private final ProcessInstanceRepository processInstanceRepository;
+    private final ProcessEventManager processEventManager;
 
     @GetMapping(path = "/processinstances")
     public String listInstances(
             Model model,
-            @RequestParam(required = false) String status,
+            @RequestParam(value = "status", defaultValue = "FAILED") String status,
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = "10") int size) {
 
         Pageable pageable = PageRequest.of(page,size);
-        Page<ProcessInstance> processInstancePage = null;
-
-        if(status == null)
-            processInstancePage = processInstanceRepository.findAll(pageable);
-        else
-            processInstancePage = processInstanceRepository.findAllByStatusAndIsTemplateFalse(ProcessInstanceStatus.valueOf(status),pageable);
+        Page<ProcessInstance> processInstancePage = processInstanceRepository.findAllByStatusAndIsTemplateFalse(ProcessInstanceStatus.valueOf(status),pageable);
 
         model.addAttribute("processInstancePage", processInstancePage);
 
@@ -49,6 +50,16 @@ public class ProcessInstanceController {
         }
 
         return "listProcessInstances";
+    }
+
+    @GetMapping(path = "/processinstance/rollback/{id}")
+    public String rollback(Model model, @PathVariable("id") UUID id){
+        Optional<ProcessInstance> optionalProcessInstance = processInstanceRepository.findById(id);
+        optionalProcessInstance.ifPresent(taskInstance -> {
+            processEventManager.sendProcessInstanceEvent(id, ProcessInstanceEvent.ROLLED_BACK);
+        });
+
+        return "redirect:/api/v1/processinstances";
     }
 
 }

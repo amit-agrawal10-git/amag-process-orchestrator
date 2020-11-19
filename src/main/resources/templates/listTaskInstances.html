@@ -27,24 +27,33 @@
 <table border="1">
     <thead>
         <tr>
+            <th th:text="#{task.instance.key}" />
             <th th:text="#{task.instance.name}" />
             <th th:text="#{task.instance.status}" />
+            <th th:text="#{task.instance.output}" />
+            <th th:text="#{task.instance.events}" />
+            <th th:text="Action" />
         </tr>
     </thead>
     <tbody>
         <tr th:each="inst, iStat : ${taskInstancePage.content}"
             th:style="${iStat.odd}? 'font-weight: bold;'"
             th:alt-title="${iStat.even}? 'even' : 'odd'">
+            <td th:text="${inst.arangoKey}" />
             <td th:text="${inst.name}" />
             <td th:text="${inst.status}" />
-        </tr>
+            <td th:text="${inst.output}" />
+            <td th:text="${inst.sentEvents}" />
+            <td><a th:href="@{'/api/v1/taskinstance/rollback/'+${inst.arangoKey}}"
+                   th:text=rollback
+            ></a></td>        </tr>
     </tbody>
 </table>
 <div th:if="${taskInstancePage.totalPages > 0}" class="pagination"
     th:each="pageNumber : ${pageNumbers}">
-    <a th:href="@{/api/v1/taskinstances(size=${taskInstancePage.size}, page=${pageNumber})}"
+    <a th:href="@{/api/v1/taskinstances(size=${taskInstancePage.size}, page=${pageNumber-1})}"
         th:text=${pageNumber}
-        th:class="${pageNumber==taskInstancePage.number + 1} ? active"></a>
+        th:class="${pageNumber==taskInstancePage.number} ? active"></a>
 </div>
 </body>
 </html>

@@ -29,16 +29,34 @@ public class SimpleActionExecutor {
             } catch(NoSuchBeanDefinitionException e){
                 log.debug("Bean not found for {} using from object",simpleAction);
             }
-
+            Object output = null;
             if(managedActionBean != null){
                 simpleAction.updateManagedBeanProperties(managedActionBean);
-                Object output =  managedActionBean.execute(UUID.fromString(taskInstance.getArangoKey()),arangoOperations);
-                taskInstance.setOutput(output);
-                arangoOperations.repsert(taskInstance);
+                output =  managedActionBean.execute(UUID.fromString(taskInstance.getArangoKey()),arangoOperations);
             } else {
-                Object output =  simpleAction.execute(UUID.fromString(taskInstance.getArangoKey()),arangoOperations);
-                taskInstance.setOutput(output);
-                arangoOperations.repsert(taskInstance);
+                output =  simpleAction.execute(UUID.fromString(taskInstance.getArangoKey()),arangoOperations);
+            }
+            taskInstance.setOutput(output);
+            arangoOperations.repsert(taskInstance);
+        }, () -> {
+            log.debug("Expected task instance not found");
+        });
+    }
+
+    public void rollback(SimpleAction simpleAction, UUID taskInstanceId) {
+        Optional<TaskInstance> optionalTaskInstance = arangoOperations.find(taskInstanceId, TaskInstance.class);
+        optionalTaskInstance.ifPresentOrElse(taskInstance -> {
+            SimpleAction managedActionBean = null;
+            try{
+                managedActionBean = applicationContext.getBean(simpleAction.getClass());
+            } catch(NoSuchBeanDefinitionException e){
+                log.debug("Bean not found for {} using from object",simpleAction);
+            }
+            if(managedActionBean != null){
+                simpleAction.updateManagedBeanProperties(managedActionBean);
+                managedActionBean.rollback(UUID.fromString(taskInstance.getArangoKey()),arangoOperations);
+            } else {
+                simpleAction.rollback(UUID.fromString(taskInstance.getArangoKey()),arangoOperations);
             }
         }, () -> {
             log.debug("Expected task instance not found");

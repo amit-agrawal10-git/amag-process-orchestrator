@@ -1,7 +1,9 @@
 package com.github.amag.processorchestrator.web.controller;
 
 import com.github.amag.processorchestrator.domain.TaskInstance;
+import com.github.amag.processorchestrator.domain.enums.TaskInstanceEvent;
 import com.github.amag.processorchestrator.repositories.TaskInstanceRepository;
+import com.github.amag.processorchestrator.smconfig.events.TaskEventManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -9,10 +11,13 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -22,6 +27,7 @@ import java.util.stream.IntStream;
 public class TaskInstanceController {
 
     private final TaskInstanceRepository taskInstanceRepository;
+    private final TaskEventManager taskEventManager;
 
     @GetMapping(path = "/taskinstances")
     public String listInstances(
@@ -51,6 +57,18 @@ public class TaskInstanceController {
         }
 
         return "listTaskInstances";
+    }
+
+    @GetMapping(path = "/taskinstance/rollback/{id}")
+    public String rollback(Model model, @PathVariable("id") UUID id){
+        Optional<TaskInstance> optionalTaskInstance = taskInstanceRepository.findById(id);
+        optionalTaskInstance.ifPresent(taskInstance -> {
+            taskEventManager.sendTaskInstanceEvent(id, TaskInstanceEvent.ROLLED_BACK);
+        });
+
+        if(optionalTaskInstance.isPresent())
+            return "redirect:/api/v1/taskinstances?processInstanceId="+optionalTaskInstance.get().getProcessInstance().getArangoId();
+        return "redirect:/api/v1/taskinstances";
     }
 
 }

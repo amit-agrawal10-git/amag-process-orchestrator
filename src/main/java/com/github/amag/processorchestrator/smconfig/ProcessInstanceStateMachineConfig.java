@@ -1,6 +1,5 @@
 package com.github.amag.processorchestrator.smconfig;
 
-import com.arangodb.springframework.core.ArangoOperations;
 import com.github.amag.processorchestrator.domain.enums.ProcessInstanceEvent;
 import com.github.amag.processorchestrator.domain.enums.ProcessInstanceStatus;
 import lombok.RequiredArgsConstructor;
@@ -22,15 +21,15 @@ import java.util.EnumSet;
 public class ProcessInstanceStateMachineConfig extends StateMachineConfigurerAdapter<ProcessInstanceStatus, ProcessInstanceEvent> {
 
     public static final String PROCESS_INSTANCE_ID_HEADER = "processInstanceId";
-    private final ArangoOperations arangoOperations;
+
     private final Action<ProcessInstanceStatus, ProcessInstanceEvent> startProcessAction;
+    private final Action<ProcessInstanceStatus, ProcessInstanceEvent> rollbackProcessAction;
 
     @Override
     public void configure(StateMachineStateConfigurer<ProcessInstanceStatus, ProcessInstanceEvent> states) throws Exception {
         states.withStates()
                 .initial(ProcessInstanceStatus.PENDING)
                 .states(EnumSet.allOf(ProcessInstanceStatus.class))
-                .end(ProcessInstanceStatus.FAILED)
                 .end(ProcessInstanceStatus.COMPLETED);
 
     }
@@ -72,6 +71,13 @@ public class ProcessInstanceStateMachineConfig extends StateMachineConfigurerAda
                     .source(ProcessInstanceStatus.INPROGRESS)
                     .target(ProcessInstanceStatus.FAILED)
                     .event(ProcessInstanceEvent.ERROR_OCCURRED)
+                    .guard(instanceIdGuard())
+
+                .and().withExternal()
+                    .source(ProcessInstanceStatus.FAILED)
+                    .target(ProcessInstanceStatus.INPROGRESS)
+                    .event(ProcessInstanceEvent.ROLLED_BACK)
+                    .action(rollbackProcessAction)
                     .guard(instanceIdGuard());
 
     }
