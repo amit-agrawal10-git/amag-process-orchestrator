@@ -9,9 +9,8 @@ import com.github.amag.processorchestrator.domain.enums.ProcessInstanceEvent;
 import com.github.amag.processorchestrator.domain.enums.ProcessInstanceStatus;
 import com.github.amag.processorchestrator.domain.enums.ProcessStatus;
 import com.github.amag.processorchestrator.domain.enums.TaskInstanceStatus;
-import com.github.amag.processorchestrator.repositories.ProcessInstanceRepository;
+import com.github.amag.processorchestrator.repositories.ProcessArangoRepository;
 import com.github.amag.processorchestrator.repositories.ProcessRepository;
-import com.github.amag.processorchestrator.repositories.TaskInstanceRepository;
 import com.github.amag.processorchestrator.smconfig.events.ProcessEventManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,9 +23,8 @@ import java.util.*;
 @Slf4j
 public class ProcessManager {
 
+    private final ProcessArangoRepository processArangoRepository;
     private final ProcessRepository processRepository;
-    private final ProcessInstanceRepository processInstanceRepository;
-    private final TaskInstanceRepository taskInstanceRepository;
     private final ProcessEventManager processEventManager;
     private final ArangoOperations arangoOperations;
 
@@ -67,7 +65,7 @@ public class ProcessManager {
                             }
                         }
 
-                        List<TaskInstance> taskInstances = taskInstanceRepository.findLastTaskInstancesByProcessTemplateArangoId(process.getProcessTemplate().getArangoId());
+                        List<TaskInstance> taskInstances = processArangoRepository.findLastTaskInstancesByProcessTemplateArangoId(process.getProcessTemplate().getArangoId());
                       //  loadAllTaskInstanceTemplate(taskInstances);
                         List<TaskInstance> newTaskInstances = new ArrayList<TaskInstance>();
                         List<TaskInstance2TaskInstance> tempInstances = new ArrayList<>();
@@ -136,7 +134,7 @@ public class ProcessManager {
     }
 
     public void findAndMarkReady() {
-        Optional<ProcessInstance> optionalProcessInstance = processInstanceRepository.findByStatusAndIsTemplate(ProcessInstanceStatus.PENDING,ProcessInstanceEvent.DEPENDENCY_RESOLVED);
+        Optional<ProcessInstance> optionalProcessInstance = processArangoRepository.findByStatusAndIsTemplate(ProcessInstanceStatus.PENDING,ProcessInstanceEvent.DEPENDENCY_RESOLVED);
         optionalProcessInstance.ifPresentOrElse(foundProcessInstance -> {
             Criteria<ProcessInstance> processInstanceCriteria = foundProcessInstance.getExecutionCriteria();
             boolean output = true;
@@ -150,9 +148,9 @@ public class ProcessManager {
     }
 
     public void startProcess(final int maximumActiveProcess) {
-        long activeCount = processInstanceRepository.countByStatus(ProcessInstanceStatus.INPROGRESS);
+        long activeCount = processArangoRepository.countByStatus(ProcessInstanceStatus.INPROGRESS);
         if (activeCount < maximumActiveProcess) {
-            Optional<ProcessInstance> optionalProcessInstance = processInstanceRepository.findByStatusAndIsTemplate(ProcessInstanceStatus.READY,ProcessInstanceEvent.PICKEDUP);
+            Optional<ProcessInstance> optionalProcessInstance = processArangoRepository.findByStatusAndIsTemplate(ProcessInstanceStatus.READY,ProcessInstanceEvent.PICKEDUP);
             optionalProcessInstance.ifPresentOrElse(foundProcessInstance -> {
                 processEventManager.sendProcessInstanceEvent(UUID.fromString(foundProcessInstance.getArangoKey()),ProcessInstanceEvent.PICKEDUP);
             }, ()-> log.debug("No ready process instance found"));
@@ -162,7 +160,7 @@ public class ProcessManager {
     }
 
     public void completeProcess(){
-        Optional<ProcessInstance> optionalProcessInstance = processInstanceRepository.findCompletedProcessInstance(TaskInstanceStatus.COMPLETED, ProcessInstanceStatus.INPROGRESS,ProcessInstanceEvent.FINISHED);
+        Optional<ProcessInstance> optionalProcessInstance = processArangoRepository.findCompletedProcessInstance(TaskInstanceStatus.COMPLETED, ProcessInstanceStatus.INPROGRESS,ProcessInstanceEvent.FINISHED);
         optionalProcessInstance.ifPresentOrElse(foundProcessInstance -> {
             processEventManager.sendProcessInstanceEvent(UUID.fromString(foundProcessInstance.getArangoKey()),ProcessInstanceEvent.FINISHED);
             }, ()-> log.debug("No process instance found to be completed"));

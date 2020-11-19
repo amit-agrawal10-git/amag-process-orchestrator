@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:th="http://www.thymeleaf.org">
+<style>
+.pagination {
+	display: inline-block;
+}
+
+.pagination a {
+	color: black;
+	float: left;
+	padding: 5px 5px;
+	text-decoration: none;
+}
+
+.pagination a.active {
+	background-color: gray;
+	color: white;
+	border-radius: 2px;
+}
+</style>
+<head>
+    <title>Process Instance List</title>
+</head>
+<body>
+<h1>Process Instance List</h1>
+<table border="1">
+    <thead>
+        <tr>
+            <th th:text="#{process.instance.key}" />
+            <th th:text="#{process.instance.date}" />
+            <th th:text="#{process.instance.name}" />
+            <th th:text="#{process.instance.status}" />
+            <th th:text="#{process.instance.events}" />
+            <th th:text="#{process.instance.tasks}" />
+        </tr>
+    </thead>
+    <tbody>
+        <tr th:each="inst, iStat : ${processInstancePage.content}"
+            th:style="${iStat.odd}? 'font-weight: bold;'"
+            th:alt-title="${iStat.even}? 'even' : 'odd'">
+            <td th:text="${inst.arangoKey}" />
+            <td th:text="${inst.processDate}" />
+            <td th:text="${inst.name}" />
+            <td th:text="${inst.status}" />
+            <td th:text="${inst.sentEvents}" />
+            <td><a th:href="@{/api/v1/taskinstances(processInstanceId=${inst.arangoId})}"
+                   th:text=click
+                   ></a></td>
+        </tr>
+    </tbody>
+</table>
+<div th:if="${processInstancePage.totalPages > 0}" class="pagination"
+    th:each="pageNumber : ${pageNumbers}">
+    <a th:href="@{/api/v1/processinstances(size=${processInstancePage.size}, page=${pageNumber})}"
+        th:text=${pageNumber}
+        th:class="${pageNumber==processInstancePage.number + 1} ? active"></a>
+</div>
+</body>
+</html>
