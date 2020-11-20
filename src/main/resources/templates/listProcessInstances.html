@@ -48,9 +48,13 @@
             <td><a th:href="@{/api/v1/taskinstances(processInstanceId=${inst.arangoId})}"
                    th:text=click
                    ></a></td>
-            <td><a th:href="@{'/api/v1/processinstance/rollback/'+${inst.arangoKey}}"
-                   th:text=rollback
-            ></a></td>
+            <td>
+
+                    <a th:href="@{'/api/v1/processinstance/rollback/'+${inst.arangoKey}}"
+                       th:text="${#strings.equals(inst.status, 'FAILED')?'Rollback':''}"
+                    ></a>
+
+                </td>
         </tr>
     </tbody>
 </table>
