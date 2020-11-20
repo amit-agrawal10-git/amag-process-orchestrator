@@ -30,9 +30,9 @@
             <th th:text="#{task.instance.key}" />
             <th th:text="#{task.instance.name}" />
             <th th:text="#{task.instance.status}" />
+            <th th:text="#{task.instance.dependson}" />
             <th th:text="#{task.instance.output}" />
             <th th:text="#{task.instance.events}" />
-            <th th:text="Action" />
         </tr>
     </thead>
     <tbody>
@@ -42,11 +42,13 @@
             <td th:text="${inst.arangoKey}" />
             <td th:text="${inst.name}" />
             <td th:text="${inst.status}" />
+            <td><div th:if="${inst.dependsOn != null}"
+                     th:each="dep : ${inst.dependsOn}">
+                    <p th:text="${dep.name}"/>
+            </div> </td>
             <td th:text="${inst.output}" />
             <td th:text="${inst.sentEvents}" />
-            <td><a th:href="@{'/api/v1/taskinstance/rollback/'+${inst.arangoKey}}"
-                   th:text=rollback
-            ></a></td>        </tr>
+        </tr>
     </tbody>
 </table>
 <div th:if="${taskInstancePage.totalPages > 0}" class="pagination"

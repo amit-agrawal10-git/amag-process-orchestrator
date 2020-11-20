@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:th="http://www.thymeleaf.org">
+<style>
+.pagination {
+	display: inline-block;
+}
+
+.pagination a {
+	color: black;
+	float: left;
+	padding: 5px 5px;
+	text-decoration: none;
+}
+
+.pagination a.active {
+	background-color: gray;
+	color: white;
+	border-radius: 2px;
+}
+</style>
+<head>
+    <title>Instance Statistic</title>
+</head>
+<body>
+<h1>Process Instance Statistic</h1>
+<table border="1">
+    <thead>
+    <tr>
+        <th th:text="Status" />
+        <th th:text="Count" />
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="inst, iStat : ${pistat}"
+        th:style="${iStat.odd}? 'font-weight: bold;'"
+        th:alt-title="${iStat.even}? 'even' : 'odd'">
+        <td><a th:href="@{/api/v1/processinstances(status=${inst.status})}"
+               th:text=${inst.status}
+        ></a></td>
+        <td th:text="${inst.count}" />
+    </tr>
+    </tbody>
+</table>
+<h1>Task Instance Statistic</h1>
+<table border="1">
+    <thead>
+    <tr>
+        <th th:text="Status" />
+        <th th:text="Count" />
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="inst, iStat : ${tistat}"
+        th:style="${iStat.odd}? 'font-weight: bold;'"
+        th:alt-title="${iStat.even}? 'even' : 'odd'">
+        <td th:text="${inst.status}" />
+        <td th:text="${inst.count}" />
+    </tr>
+    </tbody>
+</table>
+</body>
+</html>

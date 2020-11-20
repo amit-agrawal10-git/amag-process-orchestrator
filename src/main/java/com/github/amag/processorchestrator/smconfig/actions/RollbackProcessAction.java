@@ -2,15 +2,23 @@ package com.github.amag.processorchestrator.smconfig.actions;
 
 import com.arangodb.springframework.core.ArangoOperations;
 import com.github.amag.processorchestrator.domain.ProcessInstance;
+import com.github.amag.processorchestrator.domain.TaskInstance;
 import com.github.amag.processorchestrator.domain.enums.ProcessInstanceEvent;
 import com.github.amag.processorchestrator.domain.enums.ProcessInstanceStatus;
+import com.github.amag.processorchestrator.domain.enums.TaskInstanceEvent;
+import com.github.amag.processorchestrator.domain.enums.TaskInstanceStatus;
+import com.github.amag.processorchestrator.repositories.TaskInstanceRepository;
 import com.github.amag.processorchestrator.smconfig.ProcessInstanceStateMachineConfig;
+import com.github.amag.processorchestrator.smconfig.events.TaskEventManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
 import org.springframework.statemachine.StateContext;
 import org.springframework.statemachine.action.Action;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -21,6 +29,8 @@ import java.util.UUID;
 public class RollbackProcessAction implements Action<ProcessInstanceStatus, ProcessInstanceEvent> {
 
     private final ArangoOperations arangoOperations;
+    private final TaskInstanceRepository taskInstanceRepository;
+    private final ApplicationContext applicationContext;
 
     @Override
     public void execute(StateContext<ProcessInstanceStatus, ProcessInstanceEvent> stateContext) {
@@ -29,12 +39,12 @@ public class RollbackProcessAction implements Action<ProcessInstanceStatus, Proc
         Optional<ProcessInstance> optionalProcessInstance = arangoOperations.find(instanceId,ProcessInstance.class);
 
         optionalProcessInstance.ifPresentOrElse(instance -> {
-        /*    Set<ProcessInstanceEvent> processInstanceEvents = instance.getSentEvents();
-            processInstanceEvents.remove(ProcessInstanceEvent.PICKEDUP);
-            instance.setSentEvents(processInstanceEvents);
-            arangoOperations.repsert(instance);*/
-            }, () ->
-                        log.error("Process Instance Not Found Id: {}", instanceId)
+                    List<TaskInstance> taskInstances = taskInstanceRepository.findAllByProcessInstanceAndStatusIn(instance.getArangoId(), Set.of(TaskInstanceStatus.COMPLETED, TaskInstanceStatus.FAILED));
+                    if (taskInstances != null){
+                        TaskEventManager taskEventManager = applicationContext.getBean(TaskEventManager.class);
+                        taskInstances.forEach(taskInstance -> taskEventManager.sendTaskInstanceEvent(UUID.fromString(taskInstance.getArangoKey()), TaskInstanceEvent.ROLLED_BACK));
+                    }
+            }, () -> log.error("Process Instance Not Found Id: {}", instanceId)
         );
     }
 }

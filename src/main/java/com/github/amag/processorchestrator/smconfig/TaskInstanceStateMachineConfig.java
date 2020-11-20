@@ -1,5 +1,8 @@
 package com.github.amag.processorchestrator.smconfig;
 
+import com.arangodb.springframework.core.ArangoOperations;
+import com.github.amag.processorchestrator.domain.TaskInstance;
+import com.github.amag.processorchestrator.domain.enums.ProcessInstanceStatus;
 import com.github.amag.processorchestrator.domain.enums.TaskInstanceEvent;
 import com.github.amag.processorchestrator.domain.enums.TaskInstanceStatus;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +18,7 @@ import org.springframework.statemachine.guard.Guard;
 import org.springframework.statemachine.listener.StateMachineListenerAdapter;
 
 import java.util.EnumSet;
+import java.util.UUID;
 
 @Configuration
 @EnableStateMachineFactory(name = "taskInstanceStateMachineFactory")
@@ -23,6 +27,7 @@ import java.util.EnumSet;
 public class TaskInstanceStateMachineConfig extends StateMachineConfigurerAdapter<TaskInstanceStatus, TaskInstanceEvent> {
 
     public static final String TASK_INSTANCE_ID_HEADER = "taskInstanceId";
+    private final ArangoOperations arangoOperations;
     private final Action<TaskInstanceStatus, TaskInstanceEvent> startTaskAction;
     private final Action<TaskInstanceStatus, TaskInstanceEvent> rollbackTaskAction;
     private final StateMachineListenerAdapter<TaskInstanceStatus, TaskInstanceEvent> taskInstanceListener;
@@ -91,19 +96,29 @@ public class TaskInstanceStateMachineConfig extends StateMachineConfigurerAdapte
                     .event(TaskInstanceEvent.ROLLED_BACK)
                     .action(rollbackTaskAction)
                     .guard(instanceIdGuard())
+                    .guard(parentProcessInstanceStatusGuard())
 
                 .and().withExternal()
                     .source(TaskInstanceStatus.FAILED)
                     .target(TaskInstanceStatus.PENDING)
                     .event(TaskInstanceEvent.ROLLED_BACK)
                     .action(rollbackTaskAction)
-                    .guard(instanceIdGuard());
-
+                    .guard(instanceIdGuard())
+                    .guard(parentProcessInstanceStatusGuard());
     }
 
     public Guard<TaskInstanceStatus, TaskInstanceEvent> instanceIdGuard(){
         return stateContext -> {
           return stateContext.getMessageHeader(TASK_INSTANCE_ID_HEADER) != null;
+        };
+    }
+
+    public Guard<TaskInstanceStatus, TaskInstanceEvent> parentProcessInstanceStatusGuard(){
+        return stateContext -> {
+            UUID taskInstanceId = UUID.fromString(stateContext.getMessageHeader(TaskInstanceStateMachineConfig.TASK_INSTANCE_ID_HEADER).toString());
+            TaskInstance taskInstance = arangoOperations.find(taskInstanceId, TaskInstance.class).get();
+            return taskInstance.getProcessInstance().getStatus().equals(ProcessInstanceStatus.INPROGRESS) ||
+                    taskInstance.getProcessInstance().getStatus().equals(ProcessInstanceStatus.FAILED);
         };
     }
 
