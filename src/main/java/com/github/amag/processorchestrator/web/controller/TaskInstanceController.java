@@ -33,18 +33,20 @@ public class TaskInstanceController {
     public String listInstances(
             Model model,
             @RequestParam(required = false) String processInstanceId,
+            @RequestParam(required = false) String processTemplateId,
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = "10") int size) {
 
         Pageable pageable = PageRequest.of(page,size);
         Page<TaskInstance> taskInstancePage = null;
 
-        if(processInstanceId == null)
+        if(processInstanceId == null && processTemplateId == null)
             taskInstancePage = taskInstanceRepository.findAll(pageable);
-        else
+        else if (processInstanceId != null)
         {
             taskInstancePage = taskInstanceRepository.findAllByProcessInstance(processInstanceId,pageable);
-        }
+        } else
+            taskInstancePage = taskInstanceRepository.findAllByProcessTemplate(processTemplateId,pageable);
 
         model.addAttribute("taskInstancePage", taskInstancePage);
 

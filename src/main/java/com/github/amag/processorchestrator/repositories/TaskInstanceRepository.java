@@ -15,5 +15,6 @@ import java.util.UUID;
 public interface TaskInstanceRepository extends ArangoRepository<TaskInstance, UUID> {
 
     Page<TaskInstance> findAllByProcessInstance(String processInstanceId, Pageable pageable);
+    Page<TaskInstance> findAllByProcessTemplate(String processInstanceId, Pageable pageable);
     List<TaskInstance> findAllByProcessInstanceAndStatusIn(String processInstanceId, Set<TaskInstanceStatus> taskInstanceStatuses);
 }

@@ -53,7 +53,7 @@
 </table>
 <div th:if="${taskInstancePage.totalPages > 0}" class="pagination"
     th:each="pageNumber : ${pageNumbers}">
-    <a th:href="@{/api/v1/taskinstances(size=${taskInstancePage.size}, page=${pageNumber-1})}"
+    <a th:href="@{${#httpServletRequest.requestURI}(size=${taskInstancePage.size}, page=${pageNumber-1})}"
         th:text=${pageNumber}
         th:class="${pageNumber==taskInstancePage.number} ? active"></a>
 </div>

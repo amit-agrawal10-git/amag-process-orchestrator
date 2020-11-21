@@ -60,9 +60,22 @@
 </table>
 <div th:if="${processInstancePage.totalPages > 0}" class="pagination"
     th:each="pageNumber : ${pageNumbers}">
-    <a th:href="@{/api/v1/processinstances(size=${processInstancePage.size}, page=${pageNumber-1})}"
+    <a th:if="${#httpServletRequest.getParameter('status') != null} and ${#httpServletRequest.getParameter('templateId') != null}"
+       th:href="@{${#httpServletRequest.requestURI}(templateId=${#httpServletRequest.getParameter('templateId')},status=${#httpServletRequest.getParameter('status')}, size=${processInstancePage.size}, page=${pageNumber-1})}"
         th:text=${pageNumber}
         th:class="${pageNumber==processInstancePage.number} ? active"></a>
+    <a th:if="${#httpServletRequest.getParameter('status') != null} and ${#httpServletRequest.getParameter('templateId') == null}"
+       th:href="@{${#httpServletRequest.requestURI}(status=${#httpServletRequest.getParameter('status')}, size=${processInstancePage.size}, page=${pageNumber-1})}"
+       th:text=${pageNumber}
+       th:class="${pageNumber==processInstancePage.number} ? active"></a>
+    <a th:if="${#httpServletRequest.getParameter('status') == null} and ${#httpServletRequest.getParameter('templateId') != null}"
+       th:href="@{${#httpServletRequest.requestURI}(templateId=${#httpServletRequest.getParameter('templateId')}, size=${processInstancePage.size}, page=${pageNumber-1})}"
+       th:text=${pageNumber}
+       th:class="${pageNumber==processInstancePage.number} ? active"></a>
+    <a th:if="${#httpServletRequest.getParameter('status') == null} and ${#httpServletRequest.getParameter('templateId') == null}"
+       th:href="@{${#httpServletRequest.requestURI}(size=${processInstancePage.size}, page=${pageNumber-1})}"
+       th:text=${pageNumber}
+       th:class="${pageNumber==processInstancePage.number} ? active"></a>
 </div>
 </body>
 </html>

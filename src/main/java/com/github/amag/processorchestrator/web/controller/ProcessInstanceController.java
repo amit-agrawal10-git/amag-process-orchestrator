@@ -11,6 +11,7 @@ import com.github.amag.processorchestrator.domain.enums.TaskInstanceEvent;
 import com.github.amag.processorchestrator.repositories.ProcessInstanceRepository;
 import com.github.amag.processorchestrator.smconfig.events.ProcessEventManager;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -28,6 +29,7 @@ import java.util.stream.IntStream;
 @RequiredArgsConstructor
 @RequestMapping("/api/v1")
 @Controller
+@Slf4j
 public class ProcessInstanceController {
 
     private final ProcessInstanceRepository processInstanceRepository;
@@ -37,12 +39,26 @@ public class ProcessInstanceController {
     @GetMapping(path = "/processinstances")
     public String listInstances(
             Model model,
-            @RequestParam(value = "status", defaultValue = "FAILED") String status,
+            @RequestParam(value = "status", required = false) String status,
+            @RequestParam(value = "templateId", required = false) String templateId,
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = "10") int size) {
 
         Pageable pageable = PageRequest.of(page,size);
-        Page<ProcessInstance> processInstancePage = processInstanceRepository.findAllByStatusAndIsTemplateFalse(ProcessInstanceStatus.valueOf(status),pageable);
+        Page<ProcessInstance> processInstancePage = null;
+        if(status==null && templateId==null)
+            processInstancePage = processInstanceRepository.findAll(pageable);
+        if(status!=null && templateId==null)
+            processInstancePage = processInstanceRepository.findAllByStatusAndIsTemplateFalse(ProcessInstanceStatus.valueOf(status),pageable);
+        if(templateId!=null)
+        {
+            ProcessInstance processTemplate = processInstanceRepository.findById(UUID.fromString(templateId)).get();
+            log.debug("processTemplate {}",processTemplate);
+            if(status!=null)
+                processInstancePage = processInstanceRepository.findAllByStatusAndProcessTemplate(status,processTemplate.getArangoId(),pageable);
+            else
+                processInstancePage = processInstanceRepository.findAllByProcessTemplate(processTemplate.getArangoId(),pageable);
+        }
 
         model.addAttribute("processInstancePage", processInstancePage);
 
@@ -57,28 +73,26 @@ public class ProcessInstanceController {
         return "listProcessInstances";
     }
 
-    @GetMapping(path = "/instance/stat")
-    public String listInstanceStat(Model model) {
+    @GetMapping(path = "/processinstance/stat/{templateKey}")
+    public String listInstanceStat(Model model, @PathVariable(value = "templateKey") String templateKey) {
 
+        log.debug("templateKey {}",templateKey);
         final String query = " for r in @@instcollection " +
-                " filter r.isTemplate == false " +
-                " collect s = r.status " +
-                " aggregate c = count(r._id)" +
-                " return { \"status\":s, \"count\":c}";
+                " filter r._key == @templateKey " +
+                " for d in @@instcollection " +
+                " filter d.processTemplate == r._id"+
+                " collect s = d.status, t = r._key" +
+                " aggregate c = count(d._id)" +
+                " return { \"status\":s, \"templateId\":t, \"count\":c}";
+        log.debug("query {}",query);
 
         Map<String,Object> bindVar = new MapBuilder()
                 .put("@instcollection",ProcessInstance.class)
+                .put("templateKey",templateKey)
                 .get();
 
         ArangoCursor<Map> arangoCursor = arangoOperations.query(query,bindVar,null,Map.class);
         model.addAttribute("pistat",arangoCursor.asListRemaining());
-
-        bindVar = new MapBuilder()
-                .put("@instcollection",TaskInstance.class)
-                .get();
-
-        arangoCursor = arangoOperations.query(query,bindVar,null,Map.class);
-        model.addAttribute("tistat",arangoCursor.asListRemaining());
 
         return "listInstanceStat";
     }
