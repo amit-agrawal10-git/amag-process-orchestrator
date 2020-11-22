@@ -1,2 +1,2 @@
-[![CircleCI](https://circleci.com/gh/amit-agrawal10-git/market-data-collection-start-manager.svg?style=svg)](https://circleci.com/gh/amit-agrawal10-git/market-data-collection-start-manager)
-# Stock Market Data Analysis Tool
+[![CircleCI](https://circleci.com/gh/amit-agrawal10-git/amag-process-orchestrator.svg?style=svg)](https://circleci.com/gh/amit-agrawal10-git/amag-process-orchestrator)
+# Process Orchestration Tool
