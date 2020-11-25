@@ -5,7 +5,9 @@ import com.arangodb.entity.KeyType;
 import com.arangodb.springframework.annotation.Document;
 import com.arangodb.springframework.annotation.HashIndex;
 import com.arangodb.springframework.annotation.Ref;
+import com.github.amag.processorchestrator.criteria.Criteria;
 import com.github.amag.processorchestrator.domain.enums.ProcessStatus;
+import com.github.amag.processorchestrator.process.actions.BaseProcessAction;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -21,10 +23,10 @@ import java.util.Date;
 @HashIndex(fields = {"processCode"}, unique = true)
 public class Process extends BaseObject {
 
-    private Date from, executedUpto;
-
     @Ref(lazy = true)
     private ProcessInstance processTemplate;
+
+    private String instantiationActionBean;
 
     private ProcessStatus processStatus;
 

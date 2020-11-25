@@ -6,7 +6,7 @@ import com.arangodb.springframework.annotation.Document;
 import com.arangodb.springframework.annotation.Ref;
 import com.github.amag.processorchestrator.domain.enums.TaskInstanceEvent;
 import com.github.amag.processorchestrator.domain.enums.TaskInstanceStatus;
-import com.github.amag.processorchestrator.task.types.BaseAction;
+import com.github.amag.processorchestrator.task.types.BaseTaskAction;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -24,7 +24,7 @@ public class TaskInstance extends BaseObject {
 
     private String name, description;
 
-    private BaseAction baseAction;
+    private BaseTaskAction baseTaskAction;
 
     private TaskInstanceStatus status;
 
@@ -33,7 +33,7 @@ public class TaskInstance extends BaseObject {
     @Ref(lazy = true)
     private ProcessInstance processTemplate;
 
-    @Ref(lazy = false)
+    @Ref(lazy = true)
     private List<TaskInstance> dependsOn;
 
     @Ref(lazy = true)

@@ -6,7 +6,7 @@ import com.github.amag.processorchestrator.domain.enums.TaskInstanceEvent;
 import com.github.amag.processorchestrator.domain.enums.TaskInstanceStatus;
 import com.github.amag.processorchestrator.smconfig.TaskInstanceStateMachineConfig;
 import com.github.amag.processorchestrator.task.executor.SimpleActionExecutor;
-import com.github.amag.processorchestrator.task.types.SimpleAction;
+import com.github.amag.processorchestrator.task.types.SimpleTaskAction;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.statemachine.StateContext;
@@ -33,10 +33,10 @@ public class StartTaskAction implements Action<TaskInstanceStatus, TaskInstanceE
         Optional<TaskInstance> optionalTaskInstance = arangoOperations.find(taskInstanceId,TaskInstance.class);
 
         optionalTaskInstance.ifPresentOrElse(taskInstance -> {
-            Object object = taskInstance.getTaskTemplate().getBaseAction();
-            if (object instanceof SimpleAction) {
+            Object object = taskInstance.getTaskTemplate().getBaseTaskAction();
+            if (object instanceof SimpleTaskAction) {
                 try {
-                    simpleActionExecutor.execute((SimpleAction) object, taskInstanceId);
+                    simpleActionExecutor.execute((SimpleTaskAction) object, taskInstanceId);
                 } catch (Exception ex){
                     stateContext.getStateMachine().setStateMachineError(ex);
                     throw ex;

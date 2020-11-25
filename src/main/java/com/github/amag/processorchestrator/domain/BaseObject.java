@@ -1,6 +1,7 @@
 package com.github.amag.processorchestrator.domain;
 
 import com.arangodb.springframework.annotation.ArangoId;
+import com.arangodb.velocypack.annotations.Expose;
 import lombok.Data;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
@@ -23,7 +24,7 @@ public abstract class BaseObject {
     @LastModifiedDate
     private Date modifiedWhen;
 
-
-    protected transient boolean criteriaResult;
+    @Expose(serialize = false, deserialize = false)
+    protected boolean criteriaResult;
 
 }

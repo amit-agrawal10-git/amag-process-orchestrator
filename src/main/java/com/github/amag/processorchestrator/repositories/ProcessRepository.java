@@ -9,5 +9,4 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface ProcessRepository extends ArangoRepository<Process, UUID> {
-    Optional<Process> findByExecutedUptoBeforeAndProcessStatus(Date date, ProcessStatus processStatus);
 }

@@ -31,8 +31,6 @@
             <th th:text="#{process.instance.name}" />
             <th th:text="#{process.code}" />
             <th th:text="#{process.status}" />
-            <th th:text="#{process.from}" />
-            <th th:text="#{process.executedUpto}" />
             <th th:text="#{process.instance.tasks}" />
         </tr>
     </thead>
@@ -46,8 +44,6 @@
             ></a></td>
             <td th:text="${inst.processCode}" />
             <td th:text="${inst.processStatus}" />
-            <td th:text="${inst.from}" />
-            <td th:text="${inst.executedUpto}" />
             <td><a th:href="@{/api/v1/taskinstances(processTemplateId=${inst.processTemplate.arangoId})}"
                    th:text=click
                    ></a></td>

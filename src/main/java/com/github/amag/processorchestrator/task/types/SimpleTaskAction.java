@@ -6,12 +6,12 @@ import com.github.amag.processorchestrator.domain.TaskInstance;
 import java.util.Optional;
 import java.util.UUID;
 
-public abstract class SimpleAction implements BaseAction {
+public abstract class SimpleTaskAction implements BaseTaskAction {
 
     public abstract Object execute(UUID taskInstanceId, ArangoOperations arangoOperations);
 
     @Override
-    public void updateManagedBeanProperties(BaseAction managedBean) {
+    public void updateManagedBeanProperties(BaseTaskAction managedBean) {
 
     }
 

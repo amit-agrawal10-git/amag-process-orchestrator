@@ -2,7 +2,7 @@ package com.github.amag.processorchestrator.task.executor;
 
 import com.arangodb.springframework.core.ArangoOperations;
 import com.github.amag.processorchestrator.domain.TaskInstance;
-import com.github.amag.processorchestrator.task.types.SimpleAction;
+import com.github.amag.processorchestrator.task.types.SimpleTaskAction;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
@@ -20,21 +20,21 @@ public class SimpleActionExecutor {
     private final ArangoOperations arangoOperations;
     private final ApplicationContext applicationContext;
 
-    public void execute(SimpleAction simpleAction, UUID taskInstanceId) {
+    public void execute(SimpleTaskAction simpleTaskAction, UUID taskInstanceId) {
         Optional<TaskInstance> optionalTaskInstance = arangoOperations.find(taskInstanceId, TaskInstance.class);
         optionalTaskInstance.ifPresentOrElse(taskInstance -> {
-            SimpleAction managedActionBean = null;
+            SimpleTaskAction managedActionBean = null;
             try{
-                managedActionBean = applicationContext.getBean(simpleAction.getClass());
+                managedActionBean = applicationContext.getBean(simpleTaskAction.getClass());
             } catch(NoSuchBeanDefinitionException e){
-                log.debug("Bean not found for {} using from object",simpleAction);
+                log.debug("Bean not found for {} using from object", simpleTaskAction);
             }
             Object output = null;
             if(managedActionBean != null){
-                simpleAction.updateManagedBeanProperties(managedActionBean);
+                simpleTaskAction.updateManagedBeanProperties(managedActionBean);
                 output =  managedActionBean.execute(UUID.fromString(taskInstance.getArangoKey()),arangoOperations);
             } else {
-                output =  simpleAction.execute(UUID.fromString(taskInstance.getArangoKey()),arangoOperations);
+                output =  simpleTaskAction.execute(UUID.fromString(taskInstance.getArangoKey()),arangoOperations);
             }
             taskInstance.setOutput(output);
             arangoOperations.repsert(taskInstance);
@@ -43,20 +43,20 @@ public class SimpleActionExecutor {
         });
     }
 
-    public void rollback(SimpleAction simpleAction, UUID taskInstanceId) {
+    public void rollback(SimpleTaskAction simpleTaskAction, UUID taskInstanceId) {
         Optional<TaskInstance> optionalTaskInstance = arangoOperations.find(taskInstanceId, TaskInstance.class);
         optionalTaskInstance.ifPresentOrElse(taskInstance -> {
-            SimpleAction managedActionBean = null;
+            SimpleTaskAction managedActionBean = null;
             try{
-                managedActionBean = applicationContext.getBean(simpleAction.getClass());
+                managedActionBean = applicationContext.getBean(simpleTaskAction.getClass());
             } catch(NoSuchBeanDefinitionException e){
-                log.debug("Bean not found for {} using from object",simpleAction);
+                log.debug("Bean not found for {} using from object", simpleTaskAction);
             }
             if(managedActionBean != null){
-                simpleAction.updateManagedBeanProperties(managedActionBean);
+                simpleTaskAction.updateManagedBeanProperties(managedActionBean);
                 managedActionBean.rollback(UUID.fromString(taskInstance.getArangoKey()),arangoOperations);
             } else {
-                simpleAction.rollback(UUID.fromString(taskInstance.getArangoKey()),arangoOperations);
+                simpleTaskAction.rollback(UUID.fromString(taskInstance.getArangoKey()),arangoOperations);
             }
         }, () -> {
             log.debug("Expected task instance not found");
