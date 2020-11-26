@@ -1,10 +1,9 @@
 package com.github.amag.processorchestrator.smconfig.interceptor;
 
 import com.arangodb.springframework.core.ArangoOperations;
-import com.github.amag.processorchestrator.domain.ErrorLog;
+import com.github.amag.platform.domain.ErrorLog;
 import com.github.amag.processorchestrator.domain.ProcessInstance;
 import com.github.amag.processorchestrator.domain.TransitionLog;
-import com.github.amag.processorchestrator.domain.enums.EntityType;
 import com.github.amag.processorchestrator.domain.enums.ProcessInstanceEvent;
 import com.github.amag.processorchestrator.domain.enums.ProcessInstanceStatus;
 import com.github.amag.processorchestrator.smconfig.ProcessInstanceStateMachineConfig;
@@ -42,7 +41,7 @@ public class ProcessInstanceChangeInterceptor extends StateMachineInterceptorAda
                         log.debug("Saving state for id: "+instanceId+" Status: "+state.getId());
                         final ProcessInstance instance = arangoOperations.find(UUID.fromString(instanceId),ProcessInstance.class).get();
                             TransitionLog transitionLog = TransitionLog.builder()
-                                    .entityType(EntityType.PROCESS_INSTANCE)
+                                    .entityType(ProcessInstance.class.getSimpleName())
                                     .entityId(stateMachine.getUuid())
                                     .fromState(instance.getStatus().toString())
                                     .toState(state.getId().toString())
@@ -63,7 +62,7 @@ public class ProcessInstanceChangeInterceptor extends StateMachineInterceptorAda
         exception.printStackTrace(pw);
         ErrorLog errorLog = ErrorLog.builder()
                 .entityId(stateMachine.getUuid())
-                .entityType(EntityType.PROCESS_INSTANCE)
+                .entityType(ProcessInstance.class.getSimpleName())
                 .stackTrace(sw.toString())
                 .build();
         arangoOperations.insert(errorLog);

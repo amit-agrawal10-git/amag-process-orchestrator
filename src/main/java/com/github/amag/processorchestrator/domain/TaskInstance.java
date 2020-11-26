@@ -4,6 +4,7 @@ package com.github.amag.processorchestrator.domain;
 import com.arangodb.entity.KeyType;
 import com.arangodb.springframework.annotation.Document;
 import com.arangodb.springframework.annotation.Ref;
+import com.github.amag.platform.domain.BaseObject;
 import com.github.amag.processorchestrator.domain.enums.TaskInstanceEvent;
 import com.github.amag.processorchestrator.domain.enums.TaskInstanceStatus;
 import com.github.amag.processorchestrator.task.types.BaseTaskAction;

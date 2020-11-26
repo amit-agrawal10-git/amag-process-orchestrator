@@ -3,7 +3,7 @@ package com.github.amag.processorchestrator.domain;
 
 import com.arangodb.entity.KeyType;
 import com.arangodb.springframework.annotation.Document;
-import com.github.amag.processorchestrator.domain.enums.EntityType;
+import com.github.amag.platform.domain.BaseObject;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -18,7 +18,7 @@ import java.util.UUID;
 @Builder
 public class TransitionLog extends BaseObject {
 
-    private EntityType entityType;
+    private String entityType;
     private UUID entityId;
     private String fromState,toState;
 }

@@ -1,25 +1,23 @@
 package com.github.amag.processorchestrator.services;
 
 import com.arangodb.springframework.core.ArangoOperations;
-import com.github.amag.processorchestrator.criteria.Criteria;
+import com.github.amag.platform.criteria.Criteria;
 import com.github.amag.processorchestrator.domain.Process;
 import com.github.amag.processorchestrator.domain.ProcessInstance;
-import com.github.amag.processorchestrator.domain.TaskInstance;
 import com.github.amag.processorchestrator.domain.enums.ProcessInstanceEvent;
 import com.github.amag.processorchestrator.domain.enums.ProcessInstanceStatus;
-import com.github.amag.processorchestrator.domain.enums.ProcessStatus;
 import com.github.amag.processorchestrator.domain.enums.TaskInstanceStatus;
 import com.github.amag.processorchestrator.process.actions.BaseProcessAction;
 import com.github.amag.processorchestrator.repositories.ProcessArangoRepository;
 import com.github.amag.processorchestrator.repositories.ProcessRepository;
-import com.github.amag.processorchestrator.repositories.TaskInstanceRepository;
 import com.github.amag.processorchestrator.smconfig.events.ProcessEventManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
+import java.util.Optional;
+import java.util.UUID;
 
 @RequiredArgsConstructor
 @Service

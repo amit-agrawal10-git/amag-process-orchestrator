@@ -1,10 +1,9 @@
 package com.github.amag.processorchestrator.smconfig.interceptor;
 
 import com.arangodb.springframework.core.ArangoOperations;
-import com.github.amag.processorchestrator.domain.ErrorLog;
+import com.github.amag.platform.domain.ErrorLog;
 import com.github.amag.processorchestrator.domain.TaskInstance;
 import com.github.amag.processorchestrator.domain.TransitionLog;
-import com.github.amag.processorchestrator.domain.enums.EntityType;
 import com.github.amag.processorchestrator.domain.enums.TaskInstanceEvent;
 import com.github.amag.processorchestrator.domain.enums.TaskInstanceStatus;
 import com.github.amag.processorchestrator.smconfig.TaskInstanceStateMachineConfig;
@@ -39,7 +38,7 @@ public class TaskInstanceChangeInterceptor extends StateMachineInterceptorAdapte
                         log.debug("Saving state for order id: "+taskInstanceId+" Status: "+state.getId());
                             TaskInstance taskInstance = arangoOperations.find(UUID.fromString(taskInstanceId), TaskInstance.class).get();
                             TransitionLog transitionLog = TransitionLog.builder()
-                                    .entityType(EntityType.TASK_INSTANCE)
+                                    .entityType(TaskInstance.class.getSimpleName())
                                     .entityId(stateMachine.getUuid())
                                     .fromState(taskInstance.getStatus().toString())
                                     .toState(state.getId().toString())
@@ -59,7 +58,7 @@ public class TaskInstanceChangeInterceptor extends StateMachineInterceptorAdapte
         exception.printStackTrace(pw);
         ErrorLog errorLog = ErrorLog.builder()
                 .entityId(stateMachine.getUuid())
-                .entityType(EntityType.TASK_INSTANCE)
+                .entityType(TaskInstance.class.getSimpleName())
                 .stackTrace(sw.toString())
                 .build();
         arangoOperations.insert(errorLog);
