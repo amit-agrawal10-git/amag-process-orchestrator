@@ -22,6 +22,10 @@ jobs:
 
         steps:
             - checkout
+            - attach_workspace:
+                  at: ~/amag-platform
+            - run: git clone https://github.com/amit-agrawal10-git/amag-platform.git ~/amag-platform
+            - run: mvn -f ~/amag-platform clean install
 
             # Download and cache dependencies
             - restore_cache:
