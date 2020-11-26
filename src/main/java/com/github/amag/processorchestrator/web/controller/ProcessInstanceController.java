@@ -4,10 +4,8 @@ import com.arangodb.ArangoCursor;
 import com.arangodb.springframework.core.ArangoOperations;
 import com.arangodb.util.MapBuilder;
 import com.github.amag.processorchestrator.domain.ProcessInstance;
-import com.github.amag.processorchestrator.domain.TaskInstance;
 import com.github.amag.processorchestrator.domain.enums.ProcessInstanceEvent;
 import com.github.amag.processorchestrator.domain.enums.ProcessInstanceStatus;
-import com.github.amag.processorchestrator.domain.enums.TaskInstanceEvent;
 import com.github.amag.processorchestrator.repositories.ProcessInstanceRepository;
 import com.github.amag.processorchestrator.smconfig.events.ProcessEventManager;
 import lombok.RequiredArgsConstructor;
@@ -17,7 +15,10 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
 import java.util.Map;
@@ -106,5 +107,6 @@ public class ProcessInstanceController {
 
         return "redirect:/api/v1/processinstances";
     }
+
 
 }

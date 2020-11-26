@@ -6,6 +6,7 @@ import com.github.amag.processorchestrator.domain.Process;
 import com.github.amag.processorchestrator.domain.ProcessInstance;
 import com.github.amag.processorchestrator.domain.enums.ProcessInstanceEvent;
 import com.github.amag.processorchestrator.domain.enums.ProcessInstanceStatus;
+import com.github.amag.processorchestrator.domain.enums.ProcessStatus;
 import com.github.amag.processorchestrator.domain.enums.TaskInstanceStatus;
 import com.github.amag.processorchestrator.process.actions.BaseProcessAction;
 import com.github.amag.processorchestrator.repositories.ProcessArangoRepository;
@@ -32,11 +33,11 @@ public class ProcessManager {
 
     public void instantiateJob() {
 
-        Iterable<Process> processes = processRepository.findAll();
+        Iterable<Process> processes = processRepository.findAllByProcessStatus(ProcessStatus.AVAILABLE);
 
         processes.forEach(process -> {
             BaseProcessAction baseProcessAction = (BaseProcessAction)applicationContext.getBean(process.getInstantiationActionBean());
-            baseProcessAction.execute(process);
+            baseProcessAction.instantiate(process);
         });
 
     }

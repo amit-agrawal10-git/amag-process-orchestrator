@@ -1,9 +1,7 @@
 package com.github.amag.processorchestrator.repositories;
 
 import com.arangodb.springframework.repository.ArangoRepository;
-import com.github.amag.processorchestrator.domain.ProcessInstance;
 import com.github.amag.processorchestrator.domain.TaskInstance;
-import com.github.amag.processorchestrator.domain.enums.ProcessInstanceStatus;
 import com.github.amag.processorchestrator.domain.enums.TaskInstanceStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

@@ -12,7 +12,6 @@ import com.github.amag.processorchestrator.smconfig.ProcessInstanceStateMachineC
 import com.github.amag.processorchestrator.smconfig.events.TaskEventManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.statemachine.StateContext;
 import org.springframework.statemachine.action.Action;

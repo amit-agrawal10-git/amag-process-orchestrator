@@ -21,6 +21,7 @@ public class TaskExecutorConfig {
         threadPoolTaskExecutor.setCorePoolSize(3);
         threadPoolTaskExecutor.setAllowCoreThreadTimeOut(true);
         threadPoolTaskExecutor.setKeepAliveSeconds(30);
+        threadPoolTaskExecutor.setWaitForTasksToCompleteOnShutdown(true);
         return threadPoolTaskExecutor;
     }
 
@@ -30,6 +31,7 @@ public class TaskExecutorConfig {
         threadPoolTaskExecutor.setCorePoolSize(2);
         threadPoolTaskExecutor.setAllowCoreThreadTimeOut(true);
         threadPoolTaskExecutor.setKeepAliveSeconds(30);
+        threadPoolTaskExecutor.setWaitForTasksToCompleteOnShutdown(true);
         return threadPoolTaskExecutor;
     }
 }

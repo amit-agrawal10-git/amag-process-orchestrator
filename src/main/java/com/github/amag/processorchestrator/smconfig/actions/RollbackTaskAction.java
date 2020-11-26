@@ -5,10 +5,10 @@ import com.github.amag.processorchestrator.domain.TaskInstance;
 import com.github.amag.processorchestrator.domain.enums.TaskInstanceEvent;
 import com.github.amag.processorchestrator.domain.enums.TaskInstanceStatus;
 import com.github.amag.processorchestrator.smconfig.TaskInstanceStateMachineConfig;
-import com.github.amag.processorchestrator.task.executor.SimpleActionExecutor;
-import com.github.amag.processorchestrator.task.types.SimpleTaskAction;
+import com.github.amag.processorchestrator.task.types.BaseTaskAction;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationContext;
 import org.springframework.statemachine.StateContext;
 import org.springframework.statemachine.action.Action;
 import org.springframework.stereotype.Component;
@@ -23,7 +23,7 @@ import java.util.UUID;
 public class RollbackTaskAction implements Action<TaskInstanceStatus, TaskInstanceEvent> {
 
     private final ArangoOperations arangoOperations;
-    private final SimpleActionExecutor simpleActionExecutor;
+    private final ApplicationContext applicationContext;
 
     @Override
     @Transactional
@@ -33,15 +33,13 @@ public class RollbackTaskAction implements Action<TaskInstanceStatus, TaskInstan
         Optional<TaskInstance> optionalTaskInstance = arangoOperations.find(taskInstanceId,TaskInstance.class);
 
         optionalTaskInstance.ifPresentOrElse(taskInstance -> {
-            Object object = taskInstance.getTaskTemplate().getBaseTaskAction();
-            if (object instanceof SimpleTaskAction) {
+            BaseTaskAction baseTaskAction = taskInstance.getTaskTemplate().getBaseTaskAction();
                 try {
-                    simpleActionExecutor.rollback((SimpleTaskAction) object, taskInstanceId);
+                    baseTaskAction.getTaskActionExecutor(applicationContext).rollback(baseTaskAction, taskInstanceId);
                 } catch (Exception ex){
                     stateContext.getStateMachine().setStateMachineError(ex);
                     throw ex;
                 }
-            }
             }, () -> log.error("Task Instance Not Found Id: " + taskInstanceId)
         );
     }

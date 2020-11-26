@@ -1,22 +1,18 @@
 package com.github.amag.processorchestrator.web.controller;
 
 import com.github.amag.processorchestrator.domain.Process;
-import com.github.amag.processorchestrator.domain.ProcessInstance;
-import com.github.amag.processorchestrator.domain.enums.ProcessInstanceStatus;
 import com.github.amag.processorchestrator.repositories.ProcessRepository;
-import com.github.amag.processorchestrator.web.exceptions.NotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
-import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 

@@ -4,6 +4,7 @@ import com.arangodb.springframework.core.ArangoOperations;
 import com.github.amag.processorchestrator.domain.Process;
 import com.github.amag.processorchestrator.domain.ProcessInstance;
 import com.github.amag.processorchestrator.domain.TaskInstance;
+import com.github.amag.processorchestrator.domain.enums.TaskInstanceStatus;
 import com.github.amag.processorchestrator.repositories.TaskInstanceRepository;
 
 import java.util.ArrayList;
@@ -11,7 +12,7 @@ import java.util.List;
 import java.util.UUID;
 
 public abstract class BaseProcessAction {
-    public abstract void execute(Process process);
+    public abstract ProcessInstance instantiate(Process process);
 
     protected List<TaskInstance> createTaskInstancesFromTemplate(ProcessInstance processTemplate, TaskInstanceRepository taskInstanceRepository){
         List<TaskInstance> taskInstances = taskInstanceRepository.findAllByProcessTemplateAndIsTemplateTrue(processTemplate.getArangoId());
@@ -47,6 +48,7 @@ public abstract class BaseProcessAction {
             x.setCreatedWhen(null);
             x.setModifiedWhen(null);
             x.setBaseTaskAction(null);
+            x.setStatus(TaskInstanceStatus.PENDING);
             x.setDescription(null);
             x.setProcessTemplate(null);
             x.setProcessInstance(processInstance);
