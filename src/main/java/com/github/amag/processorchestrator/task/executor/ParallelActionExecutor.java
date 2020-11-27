@@ -24,6 +24,7 @@ public class ParallelActionExecutor implements TaskActionExecutor {
     private final ParallelAsyncTaskExecutor parallelAsyncTaskExecutor;
 
     public void execute(BaseTaskAction baseTaskAction, UUID taskInstanceId) {
+        TaskInstance taskInstance = arangoOperations.find(taskInstanceId,TaskInstance.class).get();
         log.debug("Inside execute for {}, UUID {}",baseTaskAction,taskInstanceId);
         ParallelTaskAction parallelTaskAction = (ParallelTaskAction)baseTaskAction;
         ParallelTaskAction managedActionBean = applicationContext.getBean(parallelTaskAction.getClass());
@@ -35,7 +36,11 @@ public class ParallelActionExecutor implements TaskActionExecutor {
             futureList.add(parallelAsyncTaskExecutor.execute(managedActionBean,o,taskInstanceId));
         }
         checkForCompletion(futureList);
-        managedActionBean.postAction(futureList, taskInstanceId);
+        Object output =  managedActionBean.postAction(futureList, taskInstanceId);
+        if(output !=null){
+            taskInstance.setOutput(output);
+            arangoOperations.repsert(taskInstance);
+        }
     }
 
     private void checkForCompletion(Iterable<Future<Object>> futureList){

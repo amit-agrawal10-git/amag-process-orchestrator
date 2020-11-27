@@ -33,7 +33,7 @@ public class StartTaskAction implements Action<TaskInstanceStatus, TaskInstanceE
         Optional<TaskInstance> optionalTaskInstance = arangoOperations.find(taskInstanceId,TaskInstance.class);
 
         optionalTaskInstance.ifPresentOrElse(taskInstance -> {
-            BaseTaskAction baseTaskAction = taskInstance.getTaskTemplate().getBaseTaskAction();
+            BaseTaskAction baseTaskAction = (taskInstance.getBaseTaskAction()==null)?taskInstance.getTaskTemplate().getBaseTaskAction():taskInstance.getBaseTaskAction();
                 try {
                     baseTaskAction.getTaskActionExecutor(applicationContext).execute(baseTaskAction,taskInstanceId);
                 } catch (Exception ex){

@@ -33,7 +33,7 @@ public class RollbackTaskAction implements Action<TaskInstanceStatus, TaskInstan
         Optional<TaskInstance> optionalTaskInstance = arangoOperations.find(taskInstanceId,TaskInstance.class);
 
         optionalTaskInstance.ifPresentOrElse(taskInstance -> {
-            BaseTaskAction baseTaskAction = taskInstance.getTaskTemplate().getBaseTaskAction();
+            BaseTaskAction baseTaskAction = (taskInstance.getBaseTaskAction()==null)?taskInstance.getTaskTemplate().getBaseTaskAction():taskInstance.getBaseTaskAction();
                 try {
                     baseTaskAction.getTaskActionExecutor(applicationContext).rollback(baseTaskAction, taskInstanceId);
                 } catch (Exception ex){
