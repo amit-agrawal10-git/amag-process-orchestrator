@@ -23,23 +23,14 @@ jobs:
         steps:
             - checkout
             - attach_workspace:
+                  at: ~/spring-base-bom
+            - run: git clone https://github.com/amit-agrawal10-git/spring-base-bom.git ~/spring-base-bom
+            - run: mvn -f ~/spring-base-bom clean install
+            - attach_workspace:
                   at: ~/amag-platform
             - run: git clone https://github.com/amit-agrawal10-git/amag-platform.git ~/amag-platform
             - run: mvn -f ~/amag-platform clean install
-
-            # Download and cache dependencies
-            - restore_cache:
-                  keys:
-                      - v1-dependencies-{{ checksum "pom.xml" }}
-                      # fallback to using the latest cache if no exact match is found
-                      - v1-dependencies-
-
             - run: mvn dependency:go-offline
-
-            - save_cache:
-                  paths:
-                      - ~/.m2
-                  key: v1-dependencies-{{ checksum "pom.xml" }}
 
             # run tests!
             - run: mvn integration-test
