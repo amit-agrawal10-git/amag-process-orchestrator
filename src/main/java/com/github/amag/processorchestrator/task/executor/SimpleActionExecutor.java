@@ -27,8 +27,11 @@ public class SimpleActionExecutor implements TaskActionExecutor {
             SimpleTaskAction managedActionBean = applicationContext.getBean(simpleTaskAction.getClass());
             simpleTaskAction.updateManagedBeanProperties(managedActionBean);
             Object output =  managedActionBean.execute(UUID.fromString(taskInstance.getArangoKey()),arangoOperations);
-            taskInstance.setOutput(output);
-            arangoOperations.repsert(taskInstance);
+            if(output!=null)
+            {
+                taskInstance.setOutput(output);
+                arangoOperations.repsert(taskInstance);
+            }
         }, () -> {
             log.debug("Expected task instance not found");
         });

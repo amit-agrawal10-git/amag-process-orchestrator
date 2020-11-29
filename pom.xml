@@ -24,7 +24,7 @@
     <dependencies>
         <dependency>
             <groupId>com.github.amag</groupId>
-            <version>1.0-SNAPSHOT</version>
+            <version>${project.version}</version>
             <artifactId>platform</artifactId>
         </dependency>
         <dependency>
