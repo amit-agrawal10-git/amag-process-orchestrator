@@ -10,13 +10,16 @@ import com.github.amag.processorchestrator.domain.enums.ProcessStatus;
 import com.github.amag.processorchestrator.domain.enums.TaskInstanceStatus;
 import com.github.amag.processorchestrator.process.actions.BaseProcessAction;
 import com.github.amag.processorchestrator.repositories.ProcessArangoRepository;
+import com.github.amag.processorchestrator.repositories.ProcessInstanceRepository;
 import com.github.amag.processorchestrator.repositories.ProcessRepository;
+import com.github.amag.processorchestrator.repositories.TaskInstanceRepository;
 import com.github.amag.processorchestrator.smconfig.events.ProcessEventManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -27,9 +30,11 @@ public class ProcessManager {
 
     private final ProcessArangoRepository processArangoRepository;
     private final ProcessRepository processRepository;
+    private final ProcessInstanceRepository processInstanceRepository;
     private final ProcessEventManager processEventManager;
     private final ApplicationContext applicationContext;
     private final ArangoOperations arangoOperations;
+    private final TaskInstanceRepository taskInstanceRepository;
 
     public void instantiateJob() {
 
@@ -75,5 +80,22 @@ public class ProcessManager {
             }, ()-> log.debug("No process instance found to be completed"));
     }
 
+    public void removeAllInstancesByProcessCode(final String processCode){
+        Optional<Process> optionalProcess = processRepository.findByProcessCode(processCode);
+
+        optionalProcess.ifPresentOrElse(process -> {
+            ProcessInstance processTemplate = process.getProcessTemplate();
+            List<ProcessInstance> processInstances = processInstanceRepository.findAllByProcessTemplate(processTemplate.getArangoId());
+            if (processInstances != null && !processInstances.isEmpty()){
+                processInstances.forEach(processInstance -> {
+                    taskInstanceRepository.deleteAllByProcessInstance(processInstance.getArangoId());
+                    processInstanceRepository.delete(processInstance);
+                });
+            }
+        },()->
+            log.debug("Nothing found to delete with process code {}",processCode)
+            );
+
+    }
 
 }

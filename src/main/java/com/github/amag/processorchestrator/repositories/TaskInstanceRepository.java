@@ -16,5 +16,5 @@ public interface TaskInstanceRepository extends ArangoRepository<TaskInstance, U
     Page<TaskInstance> findAllByProcessTemplate(String processInstanceId, Pageable pageable);
     List<TaskInstance> findAllByProcessTemplateAndIsTemplateTrue(String processInstanceId);
     List<TaskInstance> findAllByProcessInstanceAndStatusIn(String processInstanceId, Set<TaskInstanceStatus> taskInstanceStatuses);
-
+    void deleteAllByProcessInstance(String processInstanceId);
 }
