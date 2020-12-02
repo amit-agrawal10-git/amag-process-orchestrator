@@ -7,18 +7,18 @@ import com.github.amag.processorchestrator.domain.ProcessInstance;
 import com.github.amag.processorchestrator.domain.enums.ProcessInstanceEvent;
 import com.github.amag.processorchestrator.domain.enums.ProcessInstanceStatus;
 import com.github.amag.processorchestrator.repositories.ProcessInstanceRepository;
+import com.github.amag.processorchestrator.services.ProcessManager;
 import com.github.amag.processorchestrator.smconfig.events.ProcessEventManager;
+import com.github.amag.processorchestrator.web.exceptions.NotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
@@ -36,6 +36,7 @@ public class ProcessInstanceController {
     private final ProcessInstanceRepository processInstanceRepository;
     private final ProcessEventManager processEventManager;
     private final ArangoOperations arangoOperations;
+    private final ProcessManager processManager;
 
     @GetMapping(path = "/processinstances")
     public String listInstances(
@@ -106,6 +107,14 @@ public class ProcessInstanceController {
         });
 
         return "redirect:/api/v1/processinstances";
+    }
+
+    @DeleteMapping(path = "/processinstance/{id}")
+    @ResponseBody
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void delete(@PathVariable("id") UUID id){
+        ProcessInstance processInstance = processInstanceRepository.findById(id).orElseThrow(NotFoundException::new);
+        processManager.deleteProcessInstance(processInstance);
     }
 
 

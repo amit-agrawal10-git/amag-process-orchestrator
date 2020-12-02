@@ -88,14 +88,21 @@ public class ProcessManager {
             List<ProcessInstance> processInstances = processInstanceRepository.findAllByProcessTemplate(processTemplate.getArangoId());
             if (processInstances != null && !processInstances.isEmpty()){
                 processInstances.forEach(processInstance -> {
-                    taskInstanceRepository.deleteAllByProcessInstance(processInstance.getArangoId());
-                    processInstanceRepository.delete(processInstance);
+                    deleteProcessInstance(processInstance);
                 });
             }
         },()->
             log.debug("Nothing found to delete with process code {}",processCode)
             );
 
+    }
+
+    public void deleteProcessInstance(final ProcessInstance processInstance){
+        if(processInstance.isTemplate())
+            taskInstanceRepository.deleteAllByProcessTemplate(processInstance.getArangoId());
+        else
+            taskInstanceRepository.deleteAllByProcessInstance(processInstance.getArangoId());
+        processInstanceRepository.delete(processInstance);
     }
 
 }
