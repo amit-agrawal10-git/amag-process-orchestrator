@@ -9,6 +9,7 @@ import com.github.amag.processorchestrator.domain.enums.TaskInstanceStatus;
 import com.github.amag.processorchestrator.smconfig.TaskInstanceStateMachineConfig;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.messaging.Message;
 import org.springframework.statemachine.StateMachine;
 import org.springframework.statemachine.state.State;
@@ -28,6 +29,7 @@ import java.util.UUID;
 public class TaskInstanceChangeInterceptor extends StateMachineInterceptorAdapter<TaskInstanceStatus, TaskInstanceEvent> {
 
     private final ArangoOperations arangoOperations;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     @Override
     @Transactional
@@ -46,8 +48,11 @@ public class TaskInstanceChangeInterceptor extends StateMachineInterceptorAdapte
                             arangoOperations.insert(transitionLog);
                             taskInstance.setStatus(state.getId());
                         arangoOperations.repsert(taskInstance);
+                        applicationEventPublisher.publishEvent(taskInstance);
                 }
                 );
+
+
     }
 
     public Exception stateMachineError(StateMachine<TaskInstanceStatus, TaskInstanceEvent> stateMachine, Exception exception) {

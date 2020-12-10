@@ -12,6 +12,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.context.annotation.Lazy;
 
 import java.util.Date;
 import java.util.Set;
@@ -24,6 +25,9 @@ import java.util.Set;
 public class ProcessInstance extends BaseObject {
 
     private String name;
+
+    @Ref(lazy = true)
+    private Process process;
 
     private ProcessInstanceStatus status;
 

@@ -6,9 +6,11 @@ import com.github.amag.processorchestrator.domain.ProcessInstance;
 import com.github.amag.processorchestrator.domain.TransitionLog;
 import com.github.amag.processorchestrator.domain.enums.ProcessInstanceEvent;
 import com.github.amag.processorchestrator.domain.enums.ProcessInstanceStatus;
+import com.github.amag.processorchestrator.domain.enums.TaskInstanceStatus;
 import com.github.amag.processorchestrator.smconfig.ProcessInstanceStateMachineConfig;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.messaging.Message;
 import org.springframework.statemachine.StateMachine;
 import org.springframework.statemachine.state.State;
@@ -28,6 +30,7 @@ import java.util.UUID;
 public class ProcessInstanceChangeInterceptor extends StateMachineInterceptorAdapter<ProcessInstanceStatus, ProcessInstanceEvent> {
 
     private final ArangoOperations arangoOperations;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     @Override
     @Transactional
@@ -50,6 +53,7 @@ public class ProcessInstanceChangeInterceptor extends StateMachineInterceptorAda
 
                         instance.setStatus(state.getId());
                         arangoOperations.repsert(instance);
+                        applicationEventPublisher.publishEvent(instance);
                 }
                 );
     }

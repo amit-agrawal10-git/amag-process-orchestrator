@@ -20,9 +20,6 @@ import lombok.NoArgsConstructor;
 @HashIndex(fields = {"processCode"}, unique = true)
 public class Process extends BaseObject {
 
-    @Ref(lazy = true)
-    private ProcessInstance processTemplate;
-
     private String instantiationActionBean;
 
     private ProcessStatus processStatus;

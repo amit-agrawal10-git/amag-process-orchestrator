@@ -35,26 +35,26 @@
         </tr>
     </thead>
     <tbody>
-        <tr th:each="inst, iStat : ${processPage.content}"
+        <tr th:each="inst, iStat : ${processInstancePage.content}"
             th:style="${iStat.odd}? 'font-weight: bold;'"
             th:alt-title="${iStat.even}? 'even' : 'odd'">
-            <td th:text="${inst.arangoKey}" />
-            <td><a th:href="@{'/api/v1/processinstance/stat/'+${inst.processTemplate.arangoKey}}"
-                   th:text="${inst.processTemplate.name}"
+            <td th:text="${inst.process.arangoKey}" />
+            <td><a th:href="@{'/api/v1/processinstance/stat/'+${inst.arangoKey}}"
+                   th:text="${inst.name}"
             ></a></td>
-            <td th:text="${inst.processCode}" />
-            <td th:text="${inst.processStatus}" />
-            <td><a th:href="@{/api/v1/taskinstances(processTemplateId=${inst.processTemplate.arangoId})}"
+            <td th:text="${inst.process.processCode}" />
+            <td th:text="${inst.process.processStatus}" />
+            <td><a th:href="@{/api/v1/taskinstances(processTemplateId=${inst.arangoId})}"
                    th:text=click
                    ></a></td>
         </tr>
     </tbody>
 </table>
-<div th:if="${processPage.totalPages > 0}" class="pagination"
+<div th:if="${processInstancePage.totalPages > 0}" class="pagination"
     th:each="pageNumber : ${pageNumbers}">
-    <a th:href="@{/api/v1/processes(size=${processPage.size}, page=${pageNumber-1})}"
+    <a th:href="@{/api/v1/processes(size=${processInstancePage.size}, page=${pageNumber-1})}"
         th:text=${pageNumber}
-        th:class="${pageNumber==processPage.number} ? active"></a>
+        th:class="${pageNumber==processInstancePage.number} ? active"></a>
 </div>
 </body>
 </html>

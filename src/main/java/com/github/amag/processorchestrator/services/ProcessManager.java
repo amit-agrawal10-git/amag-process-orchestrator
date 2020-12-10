@@ -14,6 +14,7 @@ import com.github.amag.processorchestrator.repositories.ProcessInstanceRepositor
 import com.github.amag.processorchestrator.repositories.ProcessRepository;
 import com.github.amag.processorchestrator.repositories.TaskInstanceRepository;
 import com.github.amag.processorchestrator.smconfig.events.ProcessEventManager;
+import com.github.amag.processorchestrator.web.exceptions.NotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationContext;
@@ -81,20 +82,15 @@ public class ProcessManager {
     }
 
     public void removeAllInstancesByProcessCode(final String processCode){
-        Optional<Process> optionalProcess = processRepository.findByProcessCode(processCode);
+        Process process = processRepository.findByProcessCode(processCode).orElseThrow(NotFoundException::new);
+        ProcessInstance processTemplate = processInstanceRepository.findByProcess(process.getArangoId()).orElseThrow(NotFoundException::new);
 
-        optionalProcess.ifPresentOrElse(process -> {
-            ProcessInstance processTemplate = process.getProcessTemplate();
-            List<ProcessInstance> processInstances = processInstanceRepository.findAllByProcessTemplate(processTemplate.getArangoId());
-            if (processInstances != null && !processInstances.isEmpty()){
-                processInstances.forEach(processInstance -> {
-                    deleteProcessInstance(processInstance);
-                });
-            }
-        },()->
-            log.debug("Nothing found to delete with process code {}",processCode)
-            );
-
+       List<ProcessInstance> processInstances = processInstanceRepository.findAllByProcessTemplate(processTemplate.getArangoId());
+        if (processInstances != null && !processInstances.isEmpty()){
+            processInstances.forEach(processInstance -> {
+                deleteProcessInstance(processInstance);
+            });
+        }
     }
 
     public void deleteProcessInstance(final ProcessInstance processInstance){
