@@ -1,5 +1,6 @@
 package com.github.amag.processorchestrator.services;
 
+import com.arangodb.ArangoCursor;
 import com.github.amag.processorchestrator.domain.TaskInstance;
 import com.github.amag.processorchestrator.domain.enums.ProcessInstanceStatus;
 import com.github.amag.processorchestrator.domain.enums.TaskInstanceEvent;
@@ -73,6 +74,6 @@ public class TaskManager {
     }
 
     public List<TaskInstance> findAllTaskTemplatesByProcessTemplateId(String arangoId) {
-        return taskInstanceRepository.findAllByProcessTemplateAndIsTemplateTrue(arangoId);
+        return taskInstanceRepository.findAllByProcessTemplate(arangoId).asListRemaining();
     }
 }

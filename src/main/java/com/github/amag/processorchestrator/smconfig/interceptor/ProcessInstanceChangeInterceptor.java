@@ -6,7 +6,6 @@ import com.github.amag.processorchestrator.domain.ProcessInstance;
 import com.github.amag.processorchestrator.domain.TransitionLog;
 import com.github.amag.processorchestrator.domain.enums.ProcessInstanceEvent;
 import com.github.amag.processorchestrator.domain.enums.ProcessInstanceStatus;
-import com.github.amag.processorchestrator.domain.enums.TaskInstanceStatus;
 import com.github.amag.processorchestrator.smconfig.ProcessInstanceStateMachineConfig;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,7 +16,6 @@ import org.springframework.statemachine.state.State;
 import org.springframework.statemachine.support.StateMachineInterceptorAdapter;
 import org.springframework.statemachine.transition.Transition;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -33,7 +31,6 @@ public class ProcessInstanceChangeInterceptor extends StateMachineInterceptorAda
     private final ApplicationEventPublisher applicationEventPublisher;
 
     @Override
-    @Transactional
     public void postStateChange(State<ProcessInstanceStatus, ProcessInstanceEvent> state,
                                Message<ProcessInstanceEvent> message,
                                Transition<ProcessInstanceStatus, ProcessInstanceEvent> transition,
