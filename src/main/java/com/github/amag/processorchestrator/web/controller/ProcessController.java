@@ -1,9 +1,7 @@
 package com.github.amag.processorchestrator.web.controller;
 
-import com.github.amag.processorchestrator.domain.Process;
 import com.github.amag.processorchestrator.domain.ProcessInstance;
-import com.github.amag.processorchestrator.repositories.ProcessInstanceRepository;
-import com.github.amag.processorchestrator.repositories.ProcessRepository;
+import com.github.amag.processorchestrator.services.ProcessManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -23,7 +21,7 @@ import java.util.stream.IntStream;
 @Controller
 public class ProcessController {
 
-    private final ProcessInstanceRepository processInstanceRepository;
+    private final ProcessManager processManager;
 
     @GetMapping(path = "/processes")
     public String listInstances(
@@ -32,7 +30,7 @@ public class ProcessController {
             @RequestParam(value = "size", defaultValue = "10") int size) {
 
         Pageable pageable = PageRequest.of(page,size);
-        Page<ProcessInstance> processInstancePage = processInstanceRepository.findAllByIsTemplateTrue(pageable);
+        Page<ProcessInstance> processInstancePage = processManager.findAllProcessInstances(pageable);
 
         model.addAttribute("processInstancePage", processInstancePage);
 

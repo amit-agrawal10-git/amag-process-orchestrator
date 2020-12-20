@@ -35,7 +35,12 @@
     <tr th:each="inst, iStat : ${pistat}"
         th:style="${iStat.odd}? 'font-weight: bold;'"
         th:alt-title="${iStat.even}? 'even' : 'odd'">
-        <td><a th:href="@{/api/v1/processinstances(status=${inst.status},templateId=${inst.templateId})}"
+        <td>
+            <a th:if="${inst.templateId == null}"
+               th:href="@{/api/v1/processinstances(status=${inst.status})}"
+               th:text=${inst.status}
+               ></a>
+            <a th:if="${inst.templateId != null}" th:href="@{/api/v1/processinstances(status=${inst.status},templateId=${inst.templateId})}"
                th:text=${inst.status}
         ></a></td>
         <td th:text="${inst.count}" />

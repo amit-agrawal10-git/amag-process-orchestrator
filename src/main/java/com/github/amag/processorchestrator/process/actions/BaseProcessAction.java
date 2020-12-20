@@ -5,7 +5,7 @@ import com.github.amag.processorchestrator.domain.Process;
 import com.github.amag.processorchestrator.domain.ProcessInstance;
 import com.github.amag.processorchestrator.domain.TaskInstance;
 import com.github.amag.processorchestrator.domain.enums.TaskInstanceStatus;
-import com.github.amag.processorchestrator.repositories.TaskInstanceRepository;
+import com.github.amag.processorchestrator.services.TaskManager;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,9 +14,10 @@ import java.util.UUID;
 public abstract class BaseProcessAction {
     public abstract ProcessInstance instantiate(Process process);
 
-    protected List<TaskInstance> createTaskInstancesFromTemplate(ProcessInstance processTemplate, TaskInstanceRepository taskInstanceRepository){
-        List<TaskInstance> taskInstances = taskInstanceRepository.findAllByProcessTemplateAndIsTemplateTrue(processTemplate.getArangoId());
+    protected List<TaskInstance> createTaskInstancesFromTemplate(ProcessInstance processTemplate, TaskManager taskManager){
+        List<TaskInstance> taskInstances = taskManager.findAllTaskTemplatesByProcessTemplateId(processTemplate.getArangoId());
 
+        if(taskInstances!=null && !taskInstances.isEmpty())
         taskInstances.forEach( x-> {
             if(x.getDependsOn() != null){
                 List<TaskInstance> tempList = new ArrayList<>();
@@ -26,6 +27,8 @@ public abstract class BaseProcessAction {
                 x.setDependsOn(tempList);
             }
         });
+        else
+            return new ArrayList<>();
 
         return taskInstances;
     }

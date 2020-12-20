@@ -1,8 +1,9 @@
 package com.github.amag.processorchestrator.web.controller;
 
+import com.arangodb.springframework.core.ArangoOperations;
 import com.github.amag.processorchestrator.domain.TaskInstance;
 import com.github.amag.processorchestrator.domain.enums.TaskInstanceEvent;
-import com.github.amag.processorchestrator.repositories.TaskInstanceRepository;
+import com.github.amag.processorchestrator.services.TaskManager;
 import com.github.amag.processorchestrator.smconfig.events.TaskEventManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -26,8 +27,9 @@ import java.util.stream.IntStream;
 @Controller
 public class TaskInstanceController {
 
-    private final TaskInstanceRepository taskInstanceRepository;
+    private final TaskManager taskManager;
     private final TaskEventManager taskEventManager;
+    private final ArangoOperations arangoOperations;
 
     @GetMapping(path = "/taskinstances")
     public String listInstances(
@@ -41,12 +43,12 @@ public class TaskInstanceController {
         Page<TaskInstance> taskInstancePage = null;
 
         if(processInstanceId == null && processTemplateId == null)
-            taskInstancePage = taskInstanceRepository.findAll(pageable);
+            taskInstancePage = taskManager.findAllTaskInstances(pageable);
         else if (processInstanceId != null)
         {
-            taskInstancePage = taskInstanceRepository.findAllByProcessInstance(processInstanceId,pageable);
+            taskInstancePage = taskManager.findAllTaskInstancesByProcessInstance(processInstanceId,pageable);
         } else
-            taskInstancePage = taskInstanceRepository.findAllByProcessTemplate(processTemplateId,pageable);
+            taskInstancePage = taskManager.findAllTaskInstancesByProcessTemplate(processTemplateId,pageable);
 
         model.addAttribute("taskInstancePage", taskInstancePage);
 
@@ -63,7 +65,7 @@ public class TaskInstanceController {
 
     @GetMapping(path = "/taskinstance/rollback/{id}")
     public String rollback(Model model, @PathVariable("id") UUID id){
-        Optional<TaskInstance> optionalTaskInstance = taskInstanceRepository.findById(id);
+        Optional<TaskInstance> optionalTaskInstance = arangoOperations.find(id,TaskInstance.class);
         optionalTaskInstance.ifPresent(taskInstance -> {
             taskEventManager.sendTaskInstanceEvent(id, TaskInstanceEvent.ROLLED_BACK);
         });

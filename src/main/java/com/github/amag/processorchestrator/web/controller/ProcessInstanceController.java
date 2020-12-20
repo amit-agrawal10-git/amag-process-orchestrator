@@ -6,7 +6,6 @@ import com.arangodb.util.MapBuilder;
 import com.github.amag.processorchestrator.domain.ProcessInstance;
 import com.github.amag.processorchestrator.domain.enums.ProcessInstanceEvent;
 import com.github.amag.processorchestrator.domain.enums.ProcessInstanceStatus;
-import com.github.amag.processorchestrator.repositories.ProcessInstanceRepository;
 import com.github.amag.processorchestrator.services.ProcessManager;
 import com.github.amag.processorchestrator.smconfig.events.ProcessEventManager;
 import com.github.amag.processorchestrator.web.exceptions.NotFoundException;
@@ -33,10 +32,9 @@ import java.util.stream.IntStream;
 @Slf4j
 public class ProcessInstanceController {
 
-    private final ProcessInstanceRepository processInstanceRepository;
+    private final ProcessManager processManager;
     private final ProcessEventManager processEventManager;
     private final ArangoOperations arangoOperations;
-    private final ProcessManager processManager;
 
     @GetMapping(path = "/processinstances")
     public String listInstances(
@@ -49,17 +47,17 @@ public class ProcessInstanceController {
         Pageable pageable = PageRequest.of(page,size);
         Page<ProcessInstance> processInstancePage = null;
         if(status==null && templateId==null)
-            processInstancePage = processInstanceRepository.findAll(pageable);
+            processInstancePage = processManager.findAllProcessInstances(pageable);
         if(status!=null && templateId==null)
-            processInstancePage = processInstanceRepository.findAllByStatusAndIsTemplateFalse(ProcessInstanceStatus.valueOf(status),pageable);
+            processInstancePage = processManager.findAllProcessInstanceByStatus(ProcessInstanceStatus.valueOf(status),pageable);
         if(templateId!=null)
         {
-            ProcessInstance processTemplate = processInstanceRepository.findById(UUID.fromString(templateId)).get();
+            ProcessInstance processTemplate = arangoOperations.find(UUID.fromString(templateId), ProcessInstance.class).get();
             log.debug("processTemplate {}",processTemplate);
             if(status!=null)
-                processInstancePage = processInstanceRepository.findAllByStatusAndProcessTemplate(status,processTemplate.getArangoId(),pageable);
+                processInstancePage = processManager.findAllProcessInstancesByStatusAndProcessTemplate(status,processTemplate.getArangoId(),pageable);
             else
-                processInstancePage = processInstanceRepository.findAllByProcessTemplate(processTemplate.getArangoId(),pageable);
+                processInstancePage = processManager.findAllProcessInstancesByProcessTemplate(processTemplate.getArangoId(),pageable);
         }
 
         model.addAttribute("processInstancePage", processInstancePage);
@@ -99,9 +97,29 @@ public class ProcessInstanceController {
         return "listInstanceStat";
     }
 
+    @GetMapping(path = "/processinstance/stat")
+    public String listInstanceStatGeneral(Model model) {
+
+        final String query = " for r in @@instcollection " +
+                " filter r.isTemplate == false \n" +
+                "collect s = r.status aggregate c = count(r._id) " +
+                " return { \"status\":s, \"templateId\":null, \"count\":c}" +
+                "";
+        log.debug("query {}",query);
+
+        Map<String,Object> bindVar = new MapBuilder()
+                .put("@instcollection",ProcessInstance.class)
+                .get();
+
+        ArangoCursor<Map> arangoCursor = arangoOperations.query(query,bindVar,null,Map.class);
+        model.addAttribute("pistat",arangoCursor.asListRemaining());
+
+        return "listInstanceStat";
+    }
+
     @GetMapping(path = "/processinstance/rollback/{id}")
     public String rollback(Model model, @PathVariable("id") UUID id){
-        Optional<ProcessInstance> optionalProcessInstance = processInstanceRepository.findById(id);
+        Optional<ProcessInstance> optionalProcessInstance = arangoOperations.find(id,ProcessInstance.class);
         optionalProcessInstance.ifPresent(taskInstance -> {
             processEventManager.sendProcessInstanceEvent(id, ProcessInstanceEvent.ROLLED_BACK);
         });
@@ -113,7 +131,7 @@ public class ProcessInstanceController {
     @ResponseBody
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable("id") UUID id){
-        ProcessInstance processInstance = processInstanceRepository.findById(id).orElseThrow(NotFoundException::new);
+        ProcessInstance processInstance = arangoOperations.find(id,ProcessInstance.class).orElseThrow(NotFoundException::new);
         processManager.deleteProcessInstance(processInstance);
     }
 

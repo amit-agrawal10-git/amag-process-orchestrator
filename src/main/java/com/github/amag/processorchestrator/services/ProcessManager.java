@@ -17,7 +17,11 @@ import com.github.amag.processorchestrator.smconfig.events.ProcessEventManager;
 import com.github.amag.processorchestrator.web.exceptions.NotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -32,10 +36,15 @@ public class ProcessManager {
     private final ProcessArangoRepository processArangoRepository;
     private final ProcessRepository processRepository;
     private final ProcessInstanceRepository processInstanceRepository;
-    private final ProcessEventManager processEventManager;
+    private ProcessEventManager processEventManager;
     private final ApplicationContext applicationContext;
     private final ArangoOperations arangoOperations;
     private final TaskInstanceRepository taskInstanceRepository;
+
+    @Autowired
+    public void setProcessEventManager(@Lazy ProcessEventManager processEventManager) {
+        this.processEventManager = processEventManager;
+    }
 
     public void instantiateJob() {
 
@@ -83,7 +92,7 @@ public class ProcessManager {
 
     public void removeAllInstancesByProcessCode(final String processCode){
         Process process = processRepository.findByProcessCode(processCode).orElseThrow(NotFoundException::new);
-        ProcessInstance processTemplate = processInstanceRepository.findByProcess(process.getArangoId()).orElseThrow(NotFoundException::new);
+       final ProcessInstance processTemplate = processInstanceRepository.findByProcessAndIsTemplateTrue(process.getArangoId()).orElseThrow(NotFoundException::new);
 
        List<ProcessInstance> processInstances = processInstanceRepository.findAllByProcessTemplate(processTemplate.getArangoId());
         if (processInstances != null && !processInstances.isEmpty()){
@@ -99,6 +108,30 @@ public class ProcessManager {
         else
             taskInstanceRepository.deleteAllByProcessInstance(processInstance.getArangoId());
         processInstanceRepository.delete(processInstance);
+    }
+
+    public Optional<Process> findByProcessCode(String s) {
+        return processRepository.findByProcessCode(s);
+    }
+
+    public Optional<ProcessInstance> findProcessTemplateByProcess(String processId) {
+        return processInstanceRepository.findByProcessAndIsTemplateTrue(processId);
+    }
+
+    public Page<ProcessInstance> findAllProcessInstances(Pageable pageable) {
+        return processInstanceRepository.findAllByIsTemplateFalse(pageable);
+    }
+
+    public Page<ProcessInstance> findAllProcessInstanceByStatus(ProcessInstanceStatus valueOf, Pageable pageable) {
+        return processInstanceRepository.findAllByStatusAndIsTemplateFalse(valueOf,pageable);
+    }
+
+    public Page<ProcessInstance> findAllProcessInstancesByStatusAndProcessTemplate(String status, String arangoId, Pageable pageable) {
+        return processInstanceRepository.findAllByStatusAndProcessTemplate(status,arangoId,pageable);
+    }
+
+    public Page<ProcessInstance> findAllProcessInstancesByProcessTemplate(String arangoId, Pageable pageable) {
+        return processInstanceRepository.findAllByProcessTemplate(arangoId,pageable);
     }
 
 }
