@@ -6,6 +6,7 @@ import com.arangodb.util.MapBuilder;
 import com.github.amag.processorchestrator.domain.ProcessInstance;
 import com.github.amag.processorchestrator.domain.enums.ProcessInstanceEvent;
 import com.github.amag.processorchestrator.domain.enums.ProcessInstanceStatus;
+import com.github.amag.processorchestrator.repositories.ProcessInstanceRepository;
 import com.github.amag.processorchestrator.services.ProcessManager;
 import com.github.amag.processorchestrator.smconfig.events.ProcessEventManager;
 import com.github.amag.processorchestrator.web.exceptions.NotFoundException;
@@ -35,6 +36,7 @@ public class ProcessInstanceController {
     private final ProcessManager processManager;
     private final ProcessEventManager processEventManager;
     private final ArangoOperations arangoOperations;
+    private final ProcessInstanceRepository processInstanceRepository;
 
     @GetMapping(path = "/processinstances")
     public String listInstances(
@@ -47,17 +49,17 @@ public class ProcessInstanceController {
         Pageable pageable = PageRequest.of(page,size);
         Page<ProcessInstance> processInstancePage = null;
         if(status==null && templateId==null)
-            processInstancePage = processManager.findAllProcessInstances(pageable);
+            processInstancePage = processInstanceRepository.findAllByIsTemplateFalse(pageable);
         if(status!=null && templateId==null)
-            processInstancePage = processManager.findAllProcessInstanceByStatus(ProcessInstanceStatus.valueOf(status),pageable);
+            processInstancePage = processInstanceRepository.findAllByStatusAndIsTemplateFalse(ProcessInstanceStatus.valueOf(status),pageable);
         if(templateId!=null)
         {
             ProcessInstance processTemplate = arangoOperations.find(UUID.fromString(templateId), ProcessInstance.class).get();
             log.debug("processTemplate {}",processTemplate);
             if(status!=null)
-                processInstancePage = processManager.findAllProcessInstancesByStatusAndProcessTemplate(status,processTemplate.getArangoId(),pageable);
+                processInstancePage = processInstanceRepository.findAllByStatusAndProcessTemplate(status,processTemplate.getArangoId(),pageable);
             else
-                processInstancePage = processManager.findAllProcessInstancesByProcessTemplate(processTemplate.getArangoId(),pageable);
+                processInstancePage = processInstanceRepository.findAllByProcessTemplate(processTemplate.getArangoId(),pageable);
         }
 
         model.addAttribute("processInstancePage", processInstancePage);

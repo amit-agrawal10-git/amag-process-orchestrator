@@ -17,6 +17,7 @@ public interface ProcessInstanceRepository extends ArangoRepository<ProcessInsta
     Optional<ProcessInstance> findByProcessAndIsTemplateTrue(String processId);
     Page<ProcessInstance> findAllByProcessTemplate(String processTemplate, Pageable pageable);
     List<ProcessInstance> findAllByProcessTemplate(String processTemplateId);
+
     Page<ProcessInstance> findAllByStatusAndProcessTemplate(String status, String processTemplate, Pageable pageable);
     Page<ProcessInstance> findAllByIsTemplateFalse(Pageable pageable);
 }

@@ -1,6 +1,5 @@
 package com.github.amag.processorchestrator.services;
 
-import com.arangodb.ArangoCursor;
 import com.github.amag.processorchestrator.domain.TaskInstance;
 import com.github.amag.processorchestrator.domain.enums.ProcessInstanceStatus;
 import com.github.amag.processorchestrator.domain.enums.TaskInstanceEvent;
@@ -10,15 +9,9 @@ import com.github.amag.processorchestrator.repositories.TaskInstanceRepository;
 import com.github.amag.processorchestrator.smconfig.events.TaskEventManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
 
 @RequiredArgsConstructor
@@ -27,13 +20,8 @@ import java.util.UUID;
 public class TaskManager {
 
     private final ProcessArangoRepository processArangoRepository;
-    private TaskEventManager taskEventManager;
+    private final TaskEventManager taskEventManager;
     private final TaskInstanceRepository taskInstanceRepository;
-
-    @Autowired
-    public void setTaskEventManager(@Lazy TaskEventManager taskEventManager) {
-        this.taskEventManager = taskEventManager;
-    }
 
     public void findAndMarkReadyTask(){
         Optional<TaskInstance> optionalTaskInstance =
@@ -55,25 +43,5 @@ public class TaskManager {
             optionalTaskInstance.ifPresentOrElse(foundTaskInstance -> {
                  taskEventManager.sendTaskInstanceEvent(UUID.fromString(foundTaskInstance.getArangoKey()), TaskInstanceEvent.FINISHED);
             }, ()-> log.debug("Didn't find any started task instance"));
-    }
-
-    public Page<TaskInstance> findAllTaskInstances(Pageable pageable) {
-        return taskInstanceRepository.findAllByIsTemplateFalse(pageable);
-    }
-
-    public Page<TaskInstance> findAllTaskInstancesByProcessInstance(String processInstanceId, Pageable pageable) {
-        return taskInstanceRepository.findAllByProcessInstance(processInstanceId,pageable);
-    }
-
-    public Page<TaskInstance> findAllTaskInstancesByProcessTemplate(String processTemplateId, Pageable pageable) {
-        return taskInstanceRepository.findAllByProcessTemplate(processTemplateId,pageable);
-    }
-
-    public List<TaskInstance> findAllTaskInstancesByProcessInstanceAndStatusIn(String arangoId, Set<TaskInstanceStatus> completed) {
-        return taskInstanceRepository.findAllByProcessInstanceAndStatusIn(arangoId,completed);
-    }
-
-    public List<TaskInstance> findAllTaskTemplatesByProcessTemplateId(String arangoId) {
-        return taskInstanceRepository.findAllByProcessTemplate(arangoId).asListRemaining();
     }
 }

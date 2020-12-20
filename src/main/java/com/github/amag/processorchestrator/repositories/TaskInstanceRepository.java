@@ -1,6 +1,5 @@
 package com.github.amag.processorchestrator.repositories;
 
-import com.arangodb.ArangoCursor;
 import com.arangodb.springframework.repository.ArangoRepository;
 import com.github.amag.processorchestrator.domain.TaskInstance;
 import com.github.amag.processorchestrator.domain.enums.TaskInstanceStatus;
@@ -15,7 +14,7 @@ public interface TaskInstanceRepository extends ArangoRepository<TaskInstance, U
 
     Page<TaskInstance> findAllByProcessInstance(String processInstanceId, Pageable pageable);
     Page<TaskInstance> findAllByProcessTemplate(String processInstanceId, Pageable pageable);
-    ArangoCursor<TaskInstance> findAllByProcessTemplate(String processInstanceId);
+    List<TaskInstance> findAllByProcessTemplate(String processTemplateId);
     List<TaskInstance> findAllByProcessInstanceAndStatusIn(String processInstanceId, Set<TaskInstanceStatus> taskInstanceStatuses);
     void deleteAllByProcessInstance(String processInstanceId);
     void deleteAllByProcessTemplate(String processTemplateId);

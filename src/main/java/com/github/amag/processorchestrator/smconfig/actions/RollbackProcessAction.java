@@ -7,7 +7,7 @@ import com.github.amag.processorchestrator.domain.enums.ProcessInstanceEvent;
 import com.github.amag.processorchestrator.domain.enums.ProcessInstanceStatus;
 import com.github.amag.processorchestrator.domain.enums.TaskInstanceEvent;
 import com.github.amag.processorchestrator.domain.enums.TaskInstanceStatus;
-import com.github.amag.processorchestrator.services.TaskManager;
+import com.github.amag.processorchestrator.repositories.TaskInstanceRepository;
 import com.github.amag.processorchestrator.smconfig.ProcessInstanceStateMachineConfig;
 import com.github.amag.processorchestrator.smconfig.events.TaskEventManager;
 import lombok.RequiredArgsConstructor;
@@ -28,7 +28,7 @@ import java.util.UUID;
 public class RollbackProcessAction implements Action<ProcessInstanceStatus, ProcessInstanceEvent> {
 
     private final ArangoOperations arangoOperations;
-    private final TaskManager taskManager;
+    private final TaskInstanceRepository taskInstanceRepository;
     private final ApplicationContext applicationContext;
 
     @Override
@@ -38,7 +38,7 @@ public class RollbackProcessAction implements Action<ProcessInstanceStatus, Proc
         Optional<ProcessInstance> optionalProcessInstance = arangoOperations.find(instanceId,ProcessInstance.class);
 
         optionalProcessInstance.ifPresentOrElse(instance -> {
-                    List<TaskInstance> taskInstances = taskManager.findAllTaskInstancesByProcessInstanceAndStatusIn(instance.getArangoId(), Set.of(TaskInstanceStatus.COMPLETED, TaskInstanceStatus.FAILED));
+                    List<TaskInstance> taskInstances = taskInstanceRepository.findAllByProcessInstanceAndStatusIn(instance.getArangoId(), Set.of(TaskInstanceStatus.COMPLETED, TaskInstanceStatus.FAILED));
                     if (taskInstances != null){
                         TaskEventManager taskEventManager = applicationContext.getBean(TaskEventManager.class);
                         taskInstances.forEach(taskInstance -> taskEventManager.sendTaskInstanceEvent(UUID.fromString(taskInstance.getArangoKey()), TaskInstanceEvent.ROLLED_BACK));
