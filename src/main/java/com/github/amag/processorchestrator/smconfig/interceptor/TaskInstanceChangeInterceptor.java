@@ -16,7 +16,6 @@ import org.springframework.statemachine.state.State;
 import org.springframework.statemachine.support.StateMachineInterceptorAdapter;
 import org.springframework.statemachine.transition.Transition;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -32,7 +31,6 @@ public class TaskInstanceChangeInterceptor extends StateMachineInterceptorAdapte
     private final ApplicationEventPublisher applicationEventPublisher;
 
     @Override
-    @Transactional
     public void postStateChange(State<TaskInstanceStatus, TaskInstanceEvent> state, Message<TaskInstanceEvent> message, Transition<TaskInstanceStatus, TaskInstanceEvent> transition, StateMachine<TaskInstanceStatus, TaskInstanceEvent> stateMachine) {
         Optional.ofNullable(message)
                 .flatMap(msg -> Optional.ofNullable((String) msg.getHeaders().getOrDefault(TaskInstanceStateMachineConfig.TASK_INSTANCE_ID_HEADER, " ")))

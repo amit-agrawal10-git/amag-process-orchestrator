@@ -83,7 +83,7 @@ public class ProcessManager {
 
     public void removeAllInstancesByProcessCode(final String processCode){
         Process process = processRepository.findByProcessCode(processCode).orElseThrow(NotFoundException::new);
-        ProcessInstance processTemplate = processInstanceRepository.findByProcess(process.getArangoId()).orElseThrow(NotFoundException::new);
+        ProcessInstance processTemplate = processInstanceRepository.findTemplateByProcess(process.getArangoId()).orElseThrow(NotFoundException::new);
 
        List<ProcessInstance> processInstances = processInstanceRepository.findAllByProcessTemplate(processTemplate.getArangoId());
         if (processInstances != null && !processInstances.isEmpty()){

@@ -49,17 +49,17 @@ public class ProcessInstanceController {
         Pageable pageable = PageRequest.of(page,size);
         Page<ProcessInstance> processInstancePage = null;
         if(status==null && templateId==null)
-            processInstancePage = processInstanceRepository.findAll(pageable);
+            processInstancePage = processInstanceRepository.findAllInstances(pageable);
         if(status!=null && templateId==null)
-            processInstancePage = processInstanceRepository.findAllByStatusAndIsTemplateFalse(ProcessInstanceStatus.valueOf(status),pageable);
+            processInstancePage = processInstanceRepository.findAllInstancesByStatus(ProcessInstanceStatus.valueOf(status),pageable);
         if(templateId!=null)
         {
             ProcessInstance processTemplate = processInstanceRepository.findById(UUID.fromString(templateId)).get();
             log.debug("processTemplate {}",processTemplate);
             if(status!=null)
-                processInstancePage = processInstanceRepository.findAllByStatusAndProcessTemplate(status,processTemplate.getArangoId(),pageable);
+                processInstancePage = processInstanceRepository.findAllInstancesByStatusAndProcessTemplate(status,processTemplate.getArangoId(),pageable);
             else
-                processInstancePage = processInstanceRepository.findAllByProcessTemplate(processTemplate.getArangoId(),pageable);
+                processInstancePage = processInstanceRepository.findAllInstancesByProcessTemplate(processTemplate.getArangoId(),pageable);
         }
 
         model.addAttribute("processInstancePage", processInstancePage);

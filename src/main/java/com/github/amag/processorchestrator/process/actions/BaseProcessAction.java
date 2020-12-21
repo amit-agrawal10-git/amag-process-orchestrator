@@ -15,7 +15,7 @@ public abstract class BaseProcessAction {
     public abstract ProcessInstance instantiate(Process process);
 
     protected List<TaskInstance> createTaskInstancesFromTemplate(ProcessInstance processTemplate, TaskInstanceRepository taskInstanceRepository){
-        List<TaskInstance> taskInstances = taskInstanceRepository.findAllByProcessTemplateAndIsTemplateTrue(processTemplate.getArangoId());
+        List<TaskInstance> taskInstances = taskInstanceRepository.findAllTemplatesByProcessTemplate(processTemplate.getArangoId());
 
         taskInstances.forEach( x-> {
             if(x.getDependsOn() != null){

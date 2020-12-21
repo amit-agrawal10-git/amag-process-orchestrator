@@ -44,9 +44,9 @@ public class TaskInstanceController {
             taskInstancePage = taskInstanceRepository.findAll(pageable);
         else if (processInstanceId != null)
         {
-            taskInstancePage = taskInstanceRepository.findAllByProcessInstance(processInstanceId,pageable);
+            taskInstancePage = taskInstanceRepository.findAllInstancesByProcessInstance(processInstanceId,pageable);
         } else
-            taskInstancePage = taskInstanceRepository.findAllByProcessTemplate(processTemplateId,pageable);
+            taskInstancePage = taskInstanceRepository.findAllTemplateByProcessTemplate(processTemplateId,pageable);
 
         model.addAttribute("taskInstancePage", taskInstancePage);
 
