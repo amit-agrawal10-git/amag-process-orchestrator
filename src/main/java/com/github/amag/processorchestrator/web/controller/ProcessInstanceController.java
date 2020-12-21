@@ -98,6 +98,26 @@ public class ProcessInstanceController {
 
         return "listInstanceStat";
     }
+    
+        @GetMapping(path = "/processinstance/stat")
+    public String listInstanceStatGeneral(Model model) {
+
+        final String query = " for r in @@instcollection " +
+                " filter r.isTemplate == false \n" +
+                "collect s = r.status aggregate c = count(r._id) " +
+                " return { \"status\":s, \"templateId\":null, \"count\":c}" +
+                "";
+        log.debug("query {}",query);
+
+        Map<String,Object> bindVar = new MapBuilder()
+                .put("@instcollection",ProcessInstance.class)
+                .get();
+
+        ArangoCursor<Map> arangoCursor = arangoOperations.query(query,bindVar,null,Map.class);
+        model.addAttribute("pistat",arangoCursor.asListRemaining());
+
+        return "listInstanceStat";
+    }
 
     @GetMapping(path = "/processinstance/rollback/{id}")
     public String rollback(Model model, @PathVariable("id") UUID id){
