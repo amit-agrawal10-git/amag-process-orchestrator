@@ -94,7 +94,7 @@ public class ProcessInstanceController {
                 .get();
 
         ArangoCursor<Map> arangoCursor = arangoOperations.query(query,bindVar,null,Map.class);
-        model.addAttribute("pistat",arangoCursor.asListRemaining());
+        model.addAttribute("pistat",arangoCursor.asListRemaining() );
 
         return "listInstanceStat";
     }
