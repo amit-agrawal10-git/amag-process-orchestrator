@@ -14,7 +14,7 @@ import java.util.UUID;
 
 public interface ProcessInstanceRepository extends ArangoRepository<ProcessInstance, UUID> {
 
-    @Query(" for r in #collection filter r.status == @status filter r.isTemplate == false #pageable return r ")
+    @Query("  for r in #collection filter r.status == @status filter r.isTemplate == false #pageable return r ")
     Page<ProcessInstance> findAllInstancesByStatus(@Param("status") ProcessInstanceStatus status, Pageable pageable);
 
     @Query(" for r in #collection filter r.isTemplate == true #pageable return r ")
