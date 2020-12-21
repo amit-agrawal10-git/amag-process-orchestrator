@@ -17,6 +17,9 @@ public interface TaskInstanceRepository extends ArangoRepository<TaskInstance, U
     @Query(" for r in #collection filter r.processInstance == @processInstanceId filter r.isTemplate == false #pageable return r ")
     Page<TaskInstance> findAllInstancesByProcessInstance(@Param("processInstanceId") String processInstanceId, Pageable pageable);
 
+    @Query(" for r in #collection filter r.isTemplate == false #pageable return r ")
+    Page<TaskInstance> findAllInstances(Pageable pageable);
+
     @Query(" for r in #collection filter r.processTemplate == @processTemplateId filter r.isTemplate == true #pageable return r ")
     Page<TaskInstance> findAllTemplateByProcessTemplate(@Param("processTemplateId") String processTemplateId, Pageable pageable);
 

@@ -5,7 +5,6 @@ import com.github.amag.processorchestrator.domain.enums.ProcessInstanceStatus;
 import com.github.amag.processorchestrator.domain.enums.TaskInstanceEvent;
 import com.github.amag.processorchestrator.domain.enums.TaskInstanceStatus;
 import com.github.amag.processorchestrator.repositories.ProcessArangoRepository;
-import com.github.amag.processorchestrator.repositories.TaskInstanceRepository;
 import com.github.amag.processorchestrator.smconfig.events.TaskEventManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,7 +20,6 @@ public class TaskManager {
 
     private final ProcessArangoRepository processArangoRepository;
     private final TaskEventManager taskEventManager;
-    private final TaskInstanceRepository taskInstanceRepository;
 
     public void findAndMarkReadyTask(){
         Optional<TaskInstance> optionalTaskInstance =
@@ -44,4 +42,5 @@ public class TaskManager {
                  taskEventManager.sendTaskInstanceEvent(UUID.fromString(foundTaskInstance.getArangoKey()), TaskInstanceEvent.FINISHED);
             }, ()-> log.debug("Didn't find any started task instance"));
     }
+
 }
