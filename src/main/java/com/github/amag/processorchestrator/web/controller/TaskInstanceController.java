@@ -41,7 +41,7 @@ public class TaskInstanceController {
         Page<TaskInstance> taskInstancePage = null;
 
         if(processInstanceId == null && processTemplateId == null)
-            taskInstancePage = taskInstanceRepository.findAll(pageable);
+            taskInstancePage = taskInstanceRepository.findAllByIsTemplateFalse(pageable);
         else if (processInstanceId != null)
         {
             taskInstancePage = taskInstanceRepository.findAllInstancesByProcessInstance(processInstanceId,pageable);

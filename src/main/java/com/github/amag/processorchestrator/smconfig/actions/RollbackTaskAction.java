@@ -12,7 +12,6 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.statemachine.StateContext;
 import org.springframework.statemachine.action.Action;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -26,7 +25,6 @@ public class RollbackTaskAction implements Action<TaskInstanceStatus, TaskInstan
     private final ApplicationContext applicationContext;
 
     @Override
-    @Transactional
     public void execute(StateContext<TaskInstanceStatus, TaskInstanceEvent> stateContext) {
         log.debug("start task instance was called");
         UUID taskInstanceId = UUID.fromString(stateContext.getMessageHeader(TaskInstanceStateMachineConfig.TASK_INSTANCE_ID_HEADER).toString());
