@@ -23,17 +23,7 @@ public class ProcessScheduler {
 
     @Scheduled(fixedRateString = "${amag.process.job.ready.delay:1000}")
     protected void markreadyJob() {
-        processManager.findAndMarkReady();
-    }
-
-    @Scheduled(fixedRateString = "${amag.process.job.start.delay:1000}")
-    protected void startJob() {
-        processManager.startProcess(maximumActiveProcess);
-    }
-
-    @Scheduled(fixedRateString = "${amag.process.job.finish.delay:3000}")
-    protected void finishJob() {
-        processManager.completeProcess();
+        processManager.findAndMarkReady(maximumActiveProcess);
     }
 
 }
