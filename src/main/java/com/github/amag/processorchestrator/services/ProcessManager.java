@@ -47,6 +47,13 @@ public class ProcessManager {
         }
     };
 
+    public static Predicate<ProcessInstance> isProcessInProgress = new Predicate<ProcessInstance>() {
+        @Override
+        public boolean test(ProcessInstance processInstance) {
+            return processInstance.getStatus().equals(ProcessInstanceStatus.INPROGRESS);
+        }
+    };
+
     public static Predicate<TaskInstance> isTaskCompleted = new Predicate<TaskInstance>() {
         @Override
         public boolean test(TaskInstance taskInstance) {
@@ -100,6 +107,14 @@ public class ProcessManager {
         optionalProcessInstance.ifPresentOrElse(foundProcessInstance -> {
             processEventManager.sendProcessInstanceEvent(UUID.fromString(foundProcessInstance.getArangoKey()),ProcessInstanceEvent.FINISHED);
             }, ()-> log.debug("No process instance found to be completed"));
+    }
+
+    @EventListener(condition = "@processManager.isProcessInProgress.test(#processInstance)")
+    public void completeProcess(ProcessInstance processInstance){
+        Optional<ProcessInstance> optionalProcessInstance = processArangoRepository.findCompletedProcessInstance(TaskInstanceStatus.COMPLETED, ProcessInstanceStatus.INPROGRESS,ProcessInstanceEvent.FINISHED);
+        optionalProcessInstance.ifPresentOrElse(foundProcessInstance -> {
+            processEventManager.sendProcessInstanceEvent(UUID.fromString(foundProcessInstance.getArangoKey()),ProcessInstanceEvent.FINISHED);
+        }, ()-> log.debug("No process instance found to be completed"));
     }
 
     public void removeAllInstancesByProcessCode(final String processCode){
