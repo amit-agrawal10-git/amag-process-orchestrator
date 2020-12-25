@@ -41,7 +41,7 @@
             th:style="${iStat.odd}? 'font-weight: bold;'"
             th:alt-title="${iStat.even}? 'even' : 'odd'">
             <td th:text="${inst.arangoKey}" />
-            <td th:text="${inst.processDate}" />
+            <td th:text="${#dates.format(inst.processDate, 'dd-MM-yyyy')}" />
             <td th:text="${inst.name}" />
             <td th:text="${inst.status}" />
             <td th:text="${inst.sentEvents}" />
